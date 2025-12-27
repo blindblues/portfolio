@@ -49,8 +49,7 @@ function initUnderwaterOverlay() {
     // Crea il sistema di bolle
     createBubbleSystem();
     
-    // Crea i raggi solari subacquei
-    createSunRays();
+    // Skip sun rays creation
     
     // Avvia l'animazione dell'overlay
     animateOverlay();
@@ -272,7 +271,44 @@ function createSunRays() {
         }
     `;
 
-    // ...
+    // Crea geometria per i raggi solari
+    const rayGeometry = new THREE.PlaneGeometry(0.3, 2);
+    
+    // Materiale principale per raggi solari
+    const sunRayMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uSunColor: { value: new THREE.Color(0x88ccff) },
+            uIntensity: { value: 0.8 },
+            uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+        },
+        vertexShader: sunRayVertexShader,
+        fragmentShader: sunRayFragmentShader,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    
+    // Crea raggi principali
+    for(let i = 0; i < 3; i++) {
+        const ray = new THREE.Mesh(rayGeometry, sunRayMaterial.clone());
+        
+        ray.position.x = (i - 1) * 0.4;
+        ray.position.y = 0.3;
+        ray.position.z = -0.5;
+        
+        ray.scale.set(0.8, 1.2, 1);
+        ray.rotation.z = (i - 1) * 0.1;
+        
+        ray.userData = {
+            type: 'sunray',
+            moveSpeed: 0.3 + Math.random() * 0.2,
+            baseIntensity: 0.6 + Math.random() * 0.4,
+            layer: i
+        };
+        
+        overlayScene.add(ray);
+    }
 
     const secondaryVertexShader = `
         precision highp float;
@@ -395,34 +431,7 @@ function animateOverlay() {
             }
         }
         
-        // Animate sun rays
-        if (child.userData && child.userData.type === 'sunray' && child.material && child.material.uniforms) {
-            // Aggiorna il tempo uniform per animazione shader
-            if (child.material.uniforms.uTime) {
-                child.material.uniforms.uTime.value = overlayTime * child.userData.moveSpeed;
-            }
-            
-            // Aggiorna l'intensità con pulsazione delicata
-            if (child.material.uniforms.uIntensity) {
-                const pulse = Math.sin(overlayTime * 0.5 + child.userData.layer) * 0.2 + 1.0;
-                child.material.uniforms.uIntensity.value = child.userData.baseIntensity * pulse;
-            }
-            
-            // Movimento leggero dei raggi per effetto organico
-            child.position.x = Math.sin(overlayTime * 0.1 + child.userData.layer) * 0.05;
-        }
-        
-        // Animate secondary sun rays
-        if (child.userData && child.userData.type === 'secondary-sunray' && child.material && child.material.uniforms) {
-            // Aggiorna tempo per raggi secondari
-            if (child.material.uniforms.uTime) {
-                child.material.uniforms.uTime.value = overlayTime * child.userData.speed;
-            }
-            
-            // Movimento ondulato
-            child.position.x += Math.sin(overlayTime * 2.0 + child.userData.speed) * 0.001;
-            child.rotation.z += Math.cos(overlayTime * 1.5) * 0.0001;
-        }
+        // Skip sun rays animation - removed
     });
     
     // Renderizza l'overlay solo se necessario
