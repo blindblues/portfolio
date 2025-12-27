@@ -160,6 +160,9 @@ async function loadModel() {
         if (window.innerWidth <= 768) {
             // Versione semplificata per mobile
             vertexShader = `
+                precision highp float;
+                precision highp int;
+                
                 varying vec3 vNormal;
                 varying vec3 vPosition;
                 
@@ -206,6 +209,9 @@ async function loadModel() {
         } else {
             // Versione completa per desktop
             vertexShader = `
+                precision highp float;
+                precision highp int;
+                
                 varying vec3 vNormal;
                 varying vec3 vPosition;
                 varying vec3 vViewPosition;
@@ -222,6 +228,9 @@ async function loadModel() {
             `;
             
             fragmentShader = `
+                precision highp float;
+                precision highp int;
+                
                 uniform vec3 uColor;
                 uniform vec3 uGlowColor;
                 uniform float uTime;
@@ -369,6 +378,9 @@ async function loadModel() {
             if (window.innerWidth <= 768) {
                 // Versione semplificata per mobile
                 vertexShader = `
+                    precision highp float;
+                    precision highp int;
+                    
                     varying vec3 vNormal;
                     varying vec3 vPosition;
                     
@@ -380,6 +392,9 @@ async function loadModel() {
                 `;
                 
                 fragmentShader = `
+                    precision highp float;
+                    precision highp int;
+                    
                     uniform vec3 uColor;
                     uniform vec3 uGlowColor;
                     uniform float uTime;
@@ -415,6 +430,9 @@ async function loadModel() {
             } else {
                 // Versione completa per desktop
                 vertexShader = `
+                    precision highp float;
+                    precision highp int;
+                    
                     varying vec3 vNormal;
                     varying vec3 vPosition;
                     varying vec3 vViewPosition;

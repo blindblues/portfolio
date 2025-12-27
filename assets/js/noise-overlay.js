@@ -7,6 +7,9 @@ let isInitialized = false;
 
 // Shader per rumore e contrasto
 const noiseVertexShader = `
+    precision highp float;
+    precision highp int;
+    
     varying vec2 vUv;
     
     void main() {
@@ -16,6 +19,9 @@ const noiseVertexShader = `
 `;
 
 const noiseFragmentShader = `
+    precision highp float;
+    precision highp int;
+    
     uniform float uTime;
     uniform float uNoiseIntensity;
     uniform float uContrast;
