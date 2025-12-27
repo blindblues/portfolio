@@ -211,6 +211,9 @@ function createSunRays() {
     
     // Shader personalizzato per raggi solari volumetrici
     const sunRayVertexShader = `
+        precision highp float;
+        precision highp int;
+        
         varying vec2 vUv;
         varying vec3 vPosition;
         varying float vDepth;
@@ -218,12 +221,15 @@ function createSunRays() {
         void main() {
             vUv = uv;
             vPosition = position;
-            vDepth = position.y; // Profondità per sfumatura
+            vDepth = position.z;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
     `;
     
     const sunRayFragmentShader = `
+        precision highp float;
+        precision highp int;
+        
         uniform float uTime;
         uniform vec3 uSunColor;
         uniform float uIntensity;
@@ -233,131 +239,45 @@ function createSunRays() {
         varying vec3 vPosition;
         varying float vDepth;
         
-        // Noise function per movimento organico
+        // Funzione noise per movimento organico
         float noise(vec2 p) {
-            return sin(p.x * 10.0) * sin(p.y * 10.0);
-        }
-        
-        // Funzione per creare pattern di raggi solari
-        float sunRayPattern(vec2 uv, float time) {
-            float rays = 0.0;
-            
-            // Crea più raggi con posizioni e movimenti diversi
-            for(int i = 0; i < 8; i++) {
-                // Posizione radiale del raggio
-                float angle = float(i) * 0.785398; // 45 gradi in radianti
-                vec2 rayDir = vec2(cos(angle), sin(angle));
-                
-                // Sposta il raggio in modo organico
-                vec2 offset = vec2(
-                    sin(time * 0.3 + float(i)) * 0.1,
-                    cos(time * 0.2 + float(i) * 1.5) * 0.05
-                );
-                
-                // Calcola la distanza dal centro del raggio
-                vec2 rayPos = uv - 0.5 - offset;
-                float rayDistance = abs(dot(rayPos, rayDir));
-                
-                // Intensità del raggio con sfumatura morbida
-                float rayIntensity = 1.0 / (1.0 + rayDistance * 15.0);
-                
-                // Modula con noise per effetto realistico
-                rayIntensity *= (0.8 + 0.8 * noise(uv * 2.0 + time * 0.1));
-                
-                // Aggiungi solo se nella giusta posizione verticale (raggi dall'alto)
-                if(uv.y < 0.7) {
-                    rays += rayIntensity * (0.7 - uv.y); // Più intensi in alto
-                }
-            }
-            
-            return rays;
+            return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
         }
         
         void main() {
-            // Pattern dei raggi solari animati
-            float rays = sunRayPattern(vUv, uTime);
+            vec2 uv = vUv;
             
-            // Colore del sole caldo e realistico
-            vec3 sunColor = uSunColor;
+            // Movimento organico dei raggi
+            float movement = noise(uv * 2.0 + uTime * 0.1) * 0.3;
+            uv.x += movement;
             
-            // Effetto di profondità - i raggi si indeboliscono scendendo
-            float depthFade = 1.0 - vDepth * 0.5;
-            depthFade = clamp(depthFade, 0.3, 1.0);
+            // Forma del raggio principale con fade centrale
+            float rayShape = 1.0 - abs(uv.x - 0.5) * 2.0;
+            rayShape = pow(rayShape, 2.0);
             
-            // Intensità finale con sfumatura
-            float finalIntensity = rays * uIntensity * depthFade;
+            // Intensità basata sulla profondità
+            float depthFade = 1.0 - vDepth * 0.3;
             
-            // Effetto di blur/sfocatura simulato con gradiente
-            vec2 center = vec2(0.7, 0.5);
-            float distToCenter = distance(vUv, center);
-            float blur = 1.0 - smoothstep(0.0, 0.8, distToCenter);
+            // Pulsazione molto lenta
+            float pulse = sin(uTime * 0.2 + uv.y * 3.0) * 0.2 + 0.8;
             
-            // Colore finale con effetto sfocato
-            vec3 finalColor = sunColor * finalIntensity * blur;
+            // Combina tutti gli effetti
+            float intensity = rayShape * depthFade * pulse * uIntensity;
             
-            // Alpha trasparente con sfumatura
-            float alpha = finalIntensity * 0.1; // Aumentato da 0.08 a 0.12
+            // Colore finale con trasparenza
+            vec3 finalColor = uSunColor * intensity;
+            float alpha = intensity * 0.4; // Trasparenza per effetto etereo
             
             gl_FragColor = vec4(finalColor, alpha);
         }
     `;
-    
-    // Crea geometria per i raggi solari (grande piano che copre lo schermo)
-    const rayGeometry = new THREE.PlaneGeometry(4, 4);
-    
-    // Materiale shader per i raggi solari
-    const sunRayMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-            uTime: { value: 0 },
-            uSunColor: { value: new THREE.Color(0x6699cc) }, // Blu subacqueo
-            uIntensity: { value: 0.6 }, // Aumentato da 0.4 a 0.6
-            uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
-        },
-        vertexShader: sunRayVertexShader,
-        fragmentShader: sunRayFragmentShader,
-        transparent: true,
-        blending: THREE.AdditiveBlending, // Blending additivo per effetto luminoso
-        depthWrite: false,
-        side: THREE.DoubleSide
-    });
-    
-    // Crea più layer di raggi per profondità
-    for(let i = 0; i < 3; i++) {
-        const rayMesh = new THREE.Mesh(rayGeometry, sunRayMaterial.clone());
-        
-        // Posiziona i layer a diverse profondità
-        rayMesh.position.z = -0.5 - i * 0.3;
-        
-        // Scala e rotazione leggermente diverse per ogni layer
-        const scale = 1.0 + i * 0.2;
-        rayMesh.scale.set(scale, scale, 1);
-        
-        // Rotazione leggera per movimento organico
-        rayMesh.rotation.z = (i - 1) * 0.05;
-        
-        // Aggiungi dati per animazione
-        rayMesh.userData = {
-            type: 'sunray',
-            layer: i,
-            baseIntensity: 0.6 - i * 0.15, // Aumentato da 0.4 a 0.6
-            moveSpeed: 0.3 + i * 0.1
-        };
-        
-        overlayScene.add(rayMesh);
-    }
-    
-    // Crea raggi secondari più sottili per dettaglio
-    createSecondarySunRays();
-    
-    console.log('Underwater sun rays created with volumetric effect');
-}
 
-// Crea raggi solari secondari per maggiore realismo
-function createSecondarySunRays() {
-    const rayGeometry = new THREE.PlaneGeometry(2, 3);
-    
-    // Shader più semplice per raggi secondari
+    // ...
+
     const secondaryVertexShader = `
+        precision highp float;
+        precision highp int;
+        
         varying vec2 vUv;
         
         void main() {
@@ -367,30 +287,31 @@ function createSecondarySunRays() {
     `;
     
     const secondaryFragmentShader = `
+        precision highp float;
+        precision highp int;
+        
         uniform float uTime;
         uniform vec3 uSunColor;
         
         varying vec2 vUv;
         
         void main() {
-            // Raggi più sottili e mobili
-            vec2 center = vec2(0.5, 0.2);
-            float dist = distance(vUv, center);
+            // Semplice gradiente orizzontale per raggi secondari
+            float gradient = 1.0 - abs(vUv.x - 0.5) * 2.0;
+            gradient = pow(gradient, 1.5);
             
-            // Movimento ondulato
-            float wave = sin(vUv.x * 20.0 + uTime * 2.0) * 0.02;
-            float intensity = 1.0 / (1.0 + (dist + wave) * 25.0);
+            // Movimento molto sottile
+            float movement = sin(uTime * 0.1 + vUv.y * 2.0) * 0.1;
+            gradient += movement;
             
-            // Solo nella parte superiore
-            intensity *= smoothstep(0.7, 0.0, vUv.y);
+            gradient = clamp(gradient, 0.0, 1.0);
             
-            vec3 color = uSunColor * intensity * 0.12; // Aumentato da 0.08 a 0.12
-            float alpha = intensity * 0.06; // Aumentato da 0.04 a 0.06
+            vec3 color = uSunColor * gradient * 0.3;
+            float alpha = gradient * 0.2;
             
             gl_FragColor = vec4(color, alpha);
         }
     `;
-    
     const secondaryMaterial = new THREE.ShaderMaterial({
         uniforms: {
             uTime: { value: 0 },
