@@ -1,0 +1,5 @@
+# Favicon redirects for mobile compatibility
+/favicon.png /Favicon.png 200
+/apple-touch-icon.png /Favicon.png 200
+/favicon.ico /Favicon.png 200
+/android-chrome-192x192.png /Favicon.png 200

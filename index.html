@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emanuele Greco</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23000000'/><text x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='%23ffffff'>EG</text></svg>">
+    <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="assets/icons/favicon.ico">
+    <link rel="manifest" href="assets/site.webmanifest">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@400;500;600;700&family=Luxurious+Script&family=Instrument+Serif:wght@400;500;600;700&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.4/dist/locomotive-scroll.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-scroll-container>
+    
+    <canvas id="canvas3d"></canvas>
+    <canvas id="underwater-canvas"></canvas>
+    <canvas id="noise-canvas"></canvas>
+    
+    <!-- Lance SVG Left -->
+    <div class="lance-left">
+        <img src="assets/images/Lance.svg" alt="Lance Left" />
+    </div>
+    
+    <!-- Lance SVG Right (mirrored and rotated) -->
+    <div class="lance-right">
+        <img src="assets/images/Lance.svg" alt="Lance Right" />
+    </div>
+    
+    <section class="hero" id="hero">
+        <!-- Prima riga: 20% altezza con logo -->
+        <div class="hero-row hero-top">
+            <div class="emanuele-logo">
+                <img src="assets/images/Emanuele-Greco.png" alt="Emanuele Greco" />
+            </div>
+        </div>
+        
+        <!-- Seconda riga: 80% altezza con elementi interattivi -->
+        <div class="hero-row hero-bottom">
+            <div class="circle-border"></div>
+            <div class="void-circle" id="voidCircle"></div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="content-section" data-scroll-section>
+        <div class="section-content" data-scroll data-scroll-speed="1" data-scroll-call="fadeInUp">
+            <h2 class="section-title" data-scroll data-scroll-speed="0.8" data-scroll-call="fadeInLeft">About</h2>
+            <div class="section-text" data-scroll data-scroll-speed="1.2" data-scroll-call="fadeInRight">
+                <p>Passionate developer creating immersive digital experiences through creative coding and innovative design.</p>
+                <p>Specializing in interactive web applications, 3D visualizations, and cutting-edge frontend technologies.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Section -->
+    <section id="portfolio" class="content-section" data-scroll-section>
+        <div class="section-content" data-scroll data-scroll-speed="1" data-scroll-call="fadeInUp">
+            <h2 class="section-title" data-scroll data-scroll-speed="0.8" data-scroll-call="fadeInRight">Portfolio</h2>
+            <div class="section-text" data-scroll data-scroll-speed="1.2" data-scroll-call="fadeInLeft">
+                <p>Explore my collection of innovative projects and creative solutions.</p>
+                <p>Each project represents a unique challenge and an opportunity to push the boundaries of web development.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="content-section" data-scroll-section>
+        <div class="section-content" data-scroll data-scroll-speed="1" data-scroll-call="fadeInUp">
+            <h2 class="section-title" data-scroll data-scroll-speed="0.8" data-scroll-call="fadeInLeft">Contact</h2>
+            <div class="section-text" data-scroll data-scroll-speed="1.2" data-scroll-call="fadeInRight">
+                <p>Let's connect and discuss your next project.</p>
+                <p>Open to collaboration and exciting opportunities in the world of web development.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Left - HOME -->
+    <nav class="nav-item corner-tl">
+        <a href="#" class="nav-link" onclick="scrollToSection('hero')">
+            <span class="font-luxurious">H</span>
+            <span class="font-pixelify">o</span>
+            <span class="font-instrument">m</span>
+            <span class="font-luxurious">e</span>
+        </a>
+    </nav>
+    
+    <!-- Top Right - ABOUT -->
+    <nav class="nav-item corner-tr">
+        <a href="#about" class="nav-link" onclick="scrollToSection('about')">
+            <span class="font-luxurious about-a">A</span>
+            <span class="font-pixelify">b</span>
+            <span class="font-instrument">o</span>
+            <span class="font-pixelify">u</span>
+            <span class="font-instrument">t</span>
+        </a>
+    </nav>
+    
+    <!-- Bottom Left - PORTFOLIO -->
+    <nav class="nav-item corner-bl">
+        <a href="#portfolio" class="nav-link" onclick="scrollToSection('portfolio')">
+            <span class="font-luxurious">P</span>
+            <span class="font-instrument">o</span>
+            <span class="font-instrument">r</span>
+            <span class="font-pixelify">t</span>
+            <span class="font-instrument">f</span>
+            <span class="font-luxurious">o</span>
+            <span class="font-instrument">l</span>
+            <span class="font-pixelify">i</span>
+            <span class="font-pixelify">o</span>
+        </a>
+    </nav>
+    
+    <!-- Bottom Right - CONTACT -->
+    <nav class="nav-item corner-br">
+        <a href="#contact" class="nav-link" onclick="scrollToSection('contact')">
+            <span class="font-luxurious">C</span>
+            <span class="font-pixelify">o</span>
+            <span class="font-instrument">n</span>
+            <span class="font-instrument">t</span>
+            <span class="font-pixelify">a</span>
+            <span class="font-instrument">c</span>
+            <span class="font-instrument">t</span>
+        </a>
+    </nav>
+    <div class="hero-content">
+    </div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.4/dist/locomotive-scroll.min.js"></script>
+    <script src="assets/js/locomotive.js"></script>
+    <script src="assets/js/stars.js?v=2"></script>
+    <script type="module" src="assets/js/main.js"></script>
+    <script type="module" src="assets/js/underwater-overlay.js"></script>
+    <script type="module" src="assets/js/noise-overlay.js"></script>
+    
+    <script>
+        // Smooth scrolling function nativo
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // Reindirizza a index-mobile.html quando il dispositivo è in verticale
+        function checkOrientation() {
+            // Controlla se siamo su un dispositivo mobile e se l'orientamento è verticale
+            if (window.innerHeight > window.innerWidth && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                // Il dispositivo è in verticale, reindirizza alla versione mobile
+                window.location.href = 'index-mobile.html';
+            }
+        }
+        
+        // Controlla l'orientamento al caricamento della pagina
+        checkOrientation();
+        
+        // Controlla quando l'orientamento cambia
+        window.addEventListener('orientationchange', checkOrientation);
+        window.addEventListener('resize', checkOrientation);
+    </script>
+</body>
+</html>

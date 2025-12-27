@@ -1,0 +1,642 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: 'Funnel Display', 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    overflow: auto;
+}
+
+/* Nascondi scrollbar per tutti i browser */
+html {
+    scrollbar-width: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+body::-webkit-scrollbar {
+    display: none;
+}
+
+.hero {
+    width: 100%;
+    height: 100vh;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border-bottom-left-radius: 50px;
+    border-bottom-right-radius: 50px;
+}
+
+.hero-row {
+    width: 100%;
+    position: relative;
+}
+
+.hero-top {
+    height: 20%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-bottom {
+    height: 80%;
+    position: relative;
+}
+
+/* Rimuovi completamente l'effetto noise per performance */
+/* .hero::before rimossa per ridurre carico CPU */
+
+/* Content Sections */
+.content-section {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.section-content {
+    max-width: 1200px;
+    padding: 0 40px;
+    text-align: center;
+    z-index: 10;
+    position: relative;
+}
+
+.section-title {
+    font-size: 8vw;
+    margin-bottom: 2rem;
+    color: rgb(203, 211, 231);
+    font-family: 'Funnel Display', sans-serif;
+    text-shadow: 
+        0 0 20px rgba(255, 255, 255, 0.3),
+        0 0 40px rgba(255, 255, 255, 0.2),
+        0 0 60px rgba(255, 255, 255, 0.1);
+}
+
+.section-text {
+    font-size: 1.5rem;
+    line-height: 1.8;
+    color: rgb(184, 192, 211);
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: 'Funnel Display', sans-serif;
+}
+
+.section-text p {
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+}
+
+/* Animazioni per le sezioni dalla about in poi - basate sulla percentuale di scroll */
+#about [data-scroll],
+#portfolio [data-scroll],
+#contact [data-scroll] {
+    opacity: 0;
+    transition: opacity 0.3s ease-out, transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: opacity, transform;
+}
+
+/* Stato attivo durante lo scroll */
+#about [data-scroll].scroll-active,
+#portfolio [data-scroll].scroll-active,
+#contact [data-scroll].scroll-active {
+    transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Effetti speciali per i titoli con underline animato */
+.section-title {
+    position: relative;
+    --underline-width: 0px;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--underline-width);
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Animazioni Locomotive Scroll - Adattate per scroll nativo (solo per hero) */
+[data-scroll]:not(.nav-item):not(#about [data-scroll]):not(#portfolio [data-scroll]):not(#contact [data-scroll]) {
+    opacity: 0;
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Classi per Intersection Observer */
+[data-scroll].in-view {
+    opacity: 1;
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+[data-scroll].out-view {
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+/* Fade In Up */
+[data-scroll-call="fadeInUp"].in-view {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+[data-scroll-call="fadeInUp"] {
+    transform: translateY(50px);
+}
+
+[data-scroll-call="fadeInUp"].out-view {
+    opacity: 0 !important;
+    transform: translateY(50px) !important;
+    transition: all 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) !important;
+}
+
+/* Fade In Left */
+[data-scroll-call="fadeInLeft"].in-view {
+    opacity: 1 !important;
+    transform: translateX(0) !important;
+}
+
+[data-scroll-call="fadeInLeft"] {
+    transform: translateX(-50px);
+}
+
+[data-scroll-call="fadeInLeft"].out-view {
+    opacity: 0 !important;
+    transform: translateX(-50px) !important;
+    transition: all 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) !important;
+}
+
+/* Fade In Right */
+[data-scroll-call="fadeInRight"].in-view {
+    opacity: 1 !important;
+    transform: translateX(0) !important;
+}
+
+[data-scroll-call="fadeInRight"] {
+    transform: translateX(50px);
+}
+
+[data-scroll-call="fadeInRight"].out-view {
+    opacity: 0 !important;
+    transform: translateX(50px) !important;
+    transition: all 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) !important;
+}
+
+/* Scale In */
+[data-scroll-call="scaleIn"].in-view {
+    opacity: 1 !important;
+    transform: scale(1) !important;
+}
+
+[data-scroll-call="scaleIn"] {
+    transform: scale(0.8);
+}
+
+[data-scroll-call="scaleIn"].out-view {
+    opacity: 0 !important;
+    transform: scale(0.8) !important;
+    transition: all 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) !important;
+}
+
+/* Effetti speciali per i titoli */
+.section-title {
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    transition: width 1s ease;
+}
+
+[data-scroll-call="fadeInLeft"].in-view .section-title::after,
+[data-scroll-call="fadeInRight"].in-view .section-title::after {
+    width: 100px;
+}
+
+[data-scroll-call="fadeInLeft"].out-view .section-title::after,
+[data-scroll-call="fadeInRight"].out-view .section-title::after {
+    width: 0;
+}
+
+/* Animazioni per i paragrafi */
+.section-text p {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s ease 0.2s;
+}
+
+.section-text.in-view p {
+    opacity: 0.9;
+    transform: translateY(0);
+}
+
+.section-text.in-view p:nth-child(2) {
+    transition-delay: 0.4s;
+}
+
+.section-text.out-view p {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.section-text.out-view p:nth-child(2) {
+    transition-delay: 0s;
+}
+
+/* Responsive adjustments for sections */
+@media (max-width: 768px) {
+    .section-content {
+        padding: 0 20px;
+    }
+    
+    .section-title {
+        font-size: 12vw;
+    }
+    
+    .section-text {
+        font-size: 1.2rem;
+    }
+}
+
+.desc {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background-color: rgb(0, 2, 17)
+}
+
+#canvas3d {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 10; /* Sotto l'overlay ma sopra le stelle */
+    will-change: transform; /* Ottimizzazione per GPU */
+    transform: translateZ(0); /* Forza GPU acceleration */
+    /* Limita il contenuto alla viewport */
+    overflow: hidden;
+    clip: rect(0, auto, auto, 0);
+    opacity: 1; /* Rende il modello 3D visibile */
+    border-bottom-left-radius: 50px;
+    border-bottom-right-radius: 50px;
+}
+
+#underwater-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 15; /* Sopra il canvas 3D ma sotto il contenuto */
+    pointer-events: none; /* Non blocca gli eventi del mouse */
+    opacity: 1.0; /* Pienamente visibile per debug */
+    mix-blend-mode: normal; /* Disabilitato per debug */
+    background: rgba(0, 100, 200, 0.3); /* Fallback visibile */
+    border-bottom-left-radius: 50px;
+    border-bottom-right-radius: 50px;
+}
+
+#noise-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 20; /* Sopra tutti gli altri elementi visivi */
+    pointer-events: none; /* Non blocca gli eventi del mouse */
+    mix-blend-mode: overlay; /* Mescola con gli altri elementi per effetto disturbo */
+    opacity: 0.6; /* Trasparente per effetto sottile ma visibile */
+    border-bottom-left-radius: 50px;
+    border-bottom-right-radius: 50px;
+}
+
+.nav-item {
+    position: absolute;
+    z-index: 30;
+    pointer-events: auto;
+    will-change: transform;
+    transform-origin: center center;
+    opacity: 1 !important;
+}
+
+.nav-link {
+    color: rgb(184, 192, 211);
+    text-decoration: none;
+    font-size: 6vw;
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    text-shadow: 
+        0 0 10px rgba(255, 255, 255, 0.2),
+        0 0 20px rgba(255, 255, 255, 0.2),
+        0 0 30px rgba(255, 255, 255, 0.1),
+        0 0 40px rgba(255, 255, 255, 0.1),
+        0 0 50px rgba(255, 255, 255, 0.1);
+}
+
+/* Prime lettere in primo piano */
+.nav-link .font-luxurious:first-child,
+.nav-link .font-parisienne:first-child {
+    position: relative;
+    z-index: 10;
+    display: inline-block;
+}
+
+/* Stile speciale per le prime lettere */
+.nav-link .font-luxurious:first-child,
+.nav-link .font-parisienne:first-child {
+    text-shadow: 
+        0 0 15px rgba(255, 255, 255, 0.4),
+        0 0 25px rgba(255, 255, 255, 0.3),
+        0 0 35px rgba(255, 255, 255, 0.2);
+    transform: translateZ(5px);
+}
+
+.about-a {
+    position: relative;
+    top: 0em;
+}
+
+/* Corner positioning with 3D rotation */
+.corner-tl {
+    top: 30vh;
+    left: 20vw;
+    transform: perspective(9vw) rotateX(345deg) rotateY(25deg) rotateZ(20deg) translateZ(-50px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.corner-tl:hover {
+    transform: perspective(9vw) rotateX(345deg) rotateY(25deg) rotateZ(20deg) translateZ(-50px) scale(1.1) translate(1vw, 1vh);
+}
+
+.corner-tr {
+    top: 30vh;
+    right: 20vw;
+    transform: perspective(9vw) rotateX(345deg) rotateY(-25deg) rotateZ(340deg) translateZ(-50px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.corner-tr:hover {
+    transform: perspective(9vw) rotateX(345deg) rotateY(-25deg) rotateZ(340deg) translateZ(-50px) scale(1.1) translate(-1vw, 1vh);
+}
+
+.corner-bl {
+    bottom: 10vh;
+    left: 20vw;
+    transform: perspective(9vw) rotateX(15deg) rotateY(25deg) rotateZ(340deg) translateZ(-50px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.corner-bl:hover {
+    transform: perspective(9vw) rotateX(15deg) rotateY(25deg) rotateZ(340deg) translateZ(-50px) scale(1.1) translate(1vw, -1vh);
+}
+
+.corner-br {
+    bottom: 10vh;
+    right: 20vw;
+    transform: perspective(9vw) rotateX(15deg) rotateY(-25deg) rotateZ(20deg) translateZ(-50px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.corner-br:hover {
+    transform: perspective(9vw) rotateX(15deg) rotateY(-25deg) rotateZ(20deg) translateZ(-50px) scale(1.1) translate(-1vw, -1vh);
+}
+
+.circle-border {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(50vh, 50vw);
+    height: min(50vh, 50vw);
+    border: 1px solid white;
+    border-radius: 50%;
+    background: transparent; /* Inizialmente trasparente */
+    z-index: 5; /* Sotto il canvas 3D (z-index 10) ma sopra l'hero */
+    pointer-events: none;
+    box-shadow: 
+        0 0 10px rgba(255, 255, 255, 0.2),
+        0 0 20px rgba(255, 255, 255, 0.2),
+        0 0 30px rgba(255, 255, 255, 0.1),
+        0 0 40px rgba(255, 255, 255, 0.1),
+        0 0 50px rgba(255, 255, 255, 0.1);
+    /* Animazione completamente disabilitata per performance */
+    will-change: transform, background; /* Ottimizzazione per GPU */
+    transition: background 0.1s ease; /* Transizione rapida per il background */
+    opacity: 1; /* Rende il circle border visibile */
+}
+
+.void-circle {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 100%);
+    filter: blur(60px);
+    z-index: 9999; /* Sopra tutti gli altri elementi */
+    pointer-events: none;
+    opacity: 0;
+    will-change: transform, opacity;
+    transition: opacity 0.1s ease;
+}
+
+.lance-left {
+    position: absolute;
+    top: 60%; /* Spostato nella seconda riga */
+    left: 20vw;
+    transform: translate(-50%, -50%) rotate(270deg);
+    z-index: 15; /* Sotto i nav link ma sopra i canvas */
+    pointer-events: none;
+}
+
+.lance-left img {
+    width: 4vw;
+    height: auto;
+    max-width: 8vw;
+    opacity: 0.7;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+}
+
+.lance-right {
+    position: absolute;
+    top: 60%; /* Spostato nella seconda riga */
+    right: 20vw;
+    transform: translate(50%, -50%) scaleX(-1) rotate(270deg);
+    z-index: 15; /* Sotto i nav link ma sopra i canvas */
+    pointer-events: none;
+}
+
+.lance-right img {
+    width: 4vw;
+    height: auto;
+    max-width: 8vw;
+    opacity: 0.7;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+}
+
+.emanuele-logo {
+    position: relative;
+    top: 6vh;
+    left: 0vw;
+    transform: none;
+    z-index: 25; /* Sopra i canvas ma sotto la navigazione */
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+    opacity: 1; /* Rende il logo SVG visibile nella prima riga */
+}
+
+.emanuele-logo img {
+    width: auto;
+    height: 40vh;
+    opacity: 0.8;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.emanuele-logo:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.emanuele-logo:hover img {
+    filter: url(#glow-hover);
+}
+
+.void-circle.expanding {
+    animation: voidExpand 1s cubic-bezier(0.005, 0.10, 0.45, 0.94) forwards;
+}
+
+@keyframes voidExpand {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    100% {
+        width: 500vmax;
+        height: 500vmax;
+        opacity: 1;
+    }
+}
+
+/* Rimuovi keyframes per performance */
+/*@keyframes rotate rimossa */
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    text-align: center;
+    padding: 0 20px;
+    pointer-events: none;
+}
+
+h1 {
+    font-size: 4vw;
+    margin-bottom: 1rem;
+    color: aliceblue;
+}
+
+p {
+    font-size: 1.5vw;
+    max-width: 600px;
+    color: aliceblue;
+}
+
+/* Luxurious Script font class with nav-link characteristics */
+.font-luxurious {
+    font-family: 'Luxurious Script', cursive !important;
+    color: rgb(203, 211, 231);
+    text-decoration: none;
+    font-size: 8vw;
+    font-weight: 700;
+    letter-spacing: -0.25em;
+    text-shadow: 
+        0 0 10px rgba(255, 255, 255, 0.2),
+        0 0 20px rgba(255, 255, 255, 0.2),
+        0 0 30px rgba(255, 255, 255, 0.1),
+        0 0 40px rgba(255, 255, 255, 0.1),
+        0 0 50px rgba(255, 255, 255, 0.1);
+    transition: none;
+    display: inline;
+}
+
+/* Instrument Serif font class with nav-link characteristics */
+.font-instrument {
+    font-family: 'Instrument Serif', serif !important;
+    color: rgb(184, 192, 211);
+    text-decoration: none;
+    font-size: 5vw;
+    font-weight: 700;
+    letter-spacing: -0.25em;
+    text-shadow: 
+        0 0 10px rgba(255, 255, 255, 0.2),
+        0 0 20px rgba(255, 255, 255, 0.2),
+        0 0 30px rgba(255, 255, 255, 0.1),
+        0 0 40px rgba(255, 255, 255, 0.1),
+        0 0 50px rgba(255, 255, 255, 0.1);
+    transition: none;
+    display: inline;
+}
+
+/* Jacquard 12 font class with nav-link characteristics */
+.font-pixelify {
+    font-family: 'Pixelify Sans', sans-serif !important;
+    color: rgb(184, 192, 211);
+    text-decoration: none;
+    font-size: 6vw;
+    font-weight: 700;
+    letter-spacing: -0.25em;
+    text-shadow: 
+        0 0 10px rgba(255, 255, 255, 0.2),
+        0 0 20px rgba(255, 255, 255, 0.2),
+        0 0 30px rgba(255, 255, 255, 0.1),
+        0 0 40px rgba(255, 255, 255, 0.1),
+        0 0 50px rgba(255, 255, 255, 0.1);
+    transition: none;
+    display: inline;
+}
