@@ -139,7 +139,7 @@
     <script src="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.4/dist/locomotive-scroll.min.js"></script>
     <script src="assets/js/locomotive.js"></script>
     <script src="assets/js/stars.js?v=2"></script>
-    <script type="module" src="assets/js/main.js"></script>
+    <script type="module" src="assets/js/main.js?v=20241227"></script>
     <script type="module" src="assets/js/underwater-overlay.js"></script>
     <script type="module" src="assets/js/noise-overlay.js"></script>
     
@@ -151,22 +151,6 @@
                 section.scrollIntoView({ behavior: 'smooth' });
             }
         }
-        
-        // Reindirizza a index-mobile.html quando il dispositivo è in verticale
-        function checkOrientation() {
-            // Controlla se siamo su un dispositivo mobile e se l'orientamento è verticale
-            if (window.innerHeight > window.innerWidth && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                // Il dispositivo è in verticale, reindirizza alla versione mobile
-                window.location.href = 'index-mobile.html';
-            }
-        }
-        
-        // Controlla l'orientamento al caricamento della pagina
-        checkOrientation();
-        
-        // Controlla quando l'orientamento cambia
-        window.addEventListener('orientationchange', checkOrientation);
-        window.addEventListener('resize', checkOrientation);
     </script>
 </body>
 </html>
