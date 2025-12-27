@@ -110,10 +110,10 @@ function init() {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseenter', onMouseEnter);
     document.addEventListener('mouseleave', onMouseLeave);
-    document.addEventListener('touchstart', onTouchStart, { passive: false });
-    document.addEventListener('touchmove', onTouchMove, { passive: false });
-    document.addEventListener('touchend', onTouchEnd, { passive: false });
-    document.addEventListener('touchcancel', onTouchCancel, { passive: false });
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+    document.addEventListener('touchcancel', onTouchCancel, { passive: true });
     window.addEventListener('resize', onWindowResize);
     window.addEventListener('scroll', onScroll);
     
@@ -167,6 +167,7 @@ async function loadModel() {
                 uniform vec3 uColor;
                 uniform vec3 uGlowColor;
                 uniform float uTime;
+                uniform vec3 uAmbientColor;
                 
                 varying vec3 vNormal;
                 varying vec3 vPosition;
@@ -174,14 +175,19 @@ async function loadModel() {
                 void main() {
                     vec3 normal = normalize(vNormal);
                     
-                    // Lighting base semplificato
-                    float NdotL = max(dot(normal, vec3(1.0, 1.0, 1.0)), 0.0);
-                    vec3 diffuse = uColor * NdotL * 0.8;
-                    vec3 ambient = uColor * 0.3;
+                    // FORZA IL COLORE BIANCO - ignora completamente uColor
+                    vec3 forcedColor = vec3(1.0, 1.0, 1.0); // Bianco puro RGB
+                    vec3 forcedGlowColor = vec3(1.0, 1.0, 1.0); // Bianco puro
+                    vec3 forcedAmbientColor = vec3(0.53, 0.53, 0.53); // Grigio chiaro
                     
-                    // Glow semplice sui bordi
+                    // Lighting base con colori forzati
+                    float NdotL = max(dot(normal, vec3(1.0, 1.0, 1.0)), 0.0);
+                    vec3 diffuse = forcedColor * NdotL * 0.8;
+                    vec3 ambient = forcedAmbientColor * 0.4;
+                    
+                    // Glow migliorato sui bordi
                     float fresnel = 1.0 - dot(normal, vec3(0.0, 0.0, 1.0));
-                    vec3 glow = uGlowColor * pow(fresnel, 2.0) * 0.5;
+                    vec3 glow = forcedGlowColor * pow(fresnel, 2.0) * 1.2; // Aumentato ancora
                     
                     // Pulsazione semplice
                     float pulse = sin(uTime * 0.3) * 0.1 + 0.9;
@@ -287,12 +293,12 @@ async function loadModel() {
 
         const shaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
-                uColor: { value: window.innerWidth > 768 ? new THREE.Color(0xffffff) : new THREE.Color(0x004466) }, // Bianco su desktop, blu su mobile
+                uColor: { value: new THREE.Color(0xffffff) }, // Sempre bianco
                 uGlowColor: { value: new THREE.Color(0xffffff) }, // Glow bianco come le scritte
                 uTime: { value: 0 },
                 uIntensity: { value: 2.0 }, // Più intensità
                 uLightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-                uAmbientColor: { value: window.innerWidth > 768 ? new THREE.Color(0x888888) : new THREE.Color(0x112244) } // Ambient grigio su desktop, scuro su mobile
+                uAmbientColor: { value: new THREE.Color(0x888888) } // Sempre grigio chiaro
             },
             vertexShader: vertexShader,
             fragmentShader: fragmentShader,
@@ -300,9 +306,24 @@ async function loadModel() {
             side: THREE.DoubleSide
         });
         
-        // Applica lo shader a tutti i mesh del modello
+        // Rimuovi tutti i materiali esistenti dal modello OBJ
         object.traverse(function(child) {
             if (child instanceof THREE.Mesh) {
+                // Rimuovi materiali esistenti e texture
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => {
+                            if (mat.map) mat.map.dispose();
+                            if (mat.normalMap) mat.normalMap.dispose();
+                            mat.dispose();
+                        });
+                    } else {
+                        if (child.material.map) child.material.map.dispose();
+                        if (child.material.normalMap) child.material.normalMap.dispose();
+                        child.material.dispose();
+                    }
+                }
+                // Applica il nuovo shader material
                 child.material = shaderMaterial;
                 child.castShadow = false;
                 shaderMaterials.push(shaderMaterial); // Aggiungi all'array
@@ -311,53 +332,22 @@ async function loadModel() {
         
         model = object;
         
-        // Scala del modello ridotta per mobile
-        let modelScale = 0.05; // Default desktop scale
-        if (window.innerWidth <= 768) {
-            modelScale = 0.03; // Ridotto per tablet
-        }
-        if (window.innerWidth <= 480) {
-            modelScale = 0.02; // Ancora più ridotto per small mobile
-        }
-        
-        model.scale.set(modelScale, modelScale, modelScale);
+        // Scala del modello responsive basata su vw e vh
+        updateModelScale();
         
         // Calcola bounding box per centrare il modello
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
         model.position.sub(center);
         
-        // Posiziona il modello 3D nella stessa posizione del circle-border
-        const circleBorder = document.querySelector('.circle-border');
-        if (circleBorder) {
-            const rect = circleBorder.getBoundingClientRect();
-            console.log('Circle border position:', rect.left, rect.top, rect.width, rect.height); // Debug
-            
-            // Calcola la posizione relativa del circle-border rispetto al centro della pagina
-            const pageCenterX = window.innerWidth / 2;
-            const pageCenterY = window.innerHeight / 2;
-            const circleCenterX = rect.left + rect.width / 2;
-            const circleCenterY = rect.top + rect.height / 2;
-            
-            // Calcola l'offset dal centro della pagina
-            const offsetX = circleCenterX - pageCenterX;
-            const offsetY = circleCenterY - pageCenterY;
-            
-            console.log('Offset:', offsetX, offsetY); // Debug
-            
-            // Applica l'offset direttamente al modello (con un fattore di scala)
-            const scaleFactor = 0.002; // Fattore di scala molto piccolo
-            model.position.x = offsetX * scaleFactor;
-            model.position.y = (-offsetY * scaleFactor) - 0.1; // Spostato più in basso di 0.3 unità
-            
-            console.log('Posizione finale modello:', model.position.x, model.position.y); // Debug
-        } else {
-            // Fallback: posizione originale
-            model.position.y += 1;
-        }
+        // Posiziona il modello usando la funzione centralizzata
+        updateModelPosition();
         
         scene.add(model);
         console.log('Modello aggiunto alla scena'); // Debug
+        
+        // Assicura che il colore sia sempre bianco all'inizializzazione
+        updateModelColor();
         
     } catch (error) {
         console.error('Errore nel caricamento del modello:', error);
@@ -365,15 +355,6 @@ async function loadModel() {
         // Fallback: crea un modello geometrico semplice
         function createFallbackModel() {
             const geometry = new THREE.TorusKnotGeometry(1, 0.3, 100, 16);
-            
-            // Scala del modello fallback ridotta per mobile
-            let fallbackScale = 1; // Default desktop scale
-            if (window.innerWidth <= 768) {
-                fallbackScale = 0.6; // Ridotto per tablet
-            }
-            if (window.innerWidth <= 480) {
-                fallbackScale = 0.4; // Ancora più ridotto per small mobile
-            }
             
             // Shader personalizzato semplificato per mobile fallback
             let vertexShader, fragmentShader;
@@ -395,6 +376,7 @@ async function loadModel() {
                     uniform vec3 uColor;
                     uniform vec3 uGlowColor;
                     uniform float uTime;
+                    uniform vec3 uAmbientColor;
                     
                     varying vec3 vNormal;
                     varying vec3 vPosition;
@@ -402,14 +384,19 @@ async function loadModel() {
                     void main() {
                         vec3 normal = normalize(vNormal);
                         
-                        // Lighting base semplificato
-                        float NdotL = max(dot(normal, vec3(1.0, 1.0, 1.0)), 0.0);
-                        vec3 diffuse = uColor * NdotL * 0.8;
-                        vec3 ambient = uColor * 0.3;
+                        // FORZA IL COLORE BIANCO - ignora completamente uColor
+                        vec3 forcedColor = vec3(1.0, 1.0, 1.0); // Bianco puro RGB
+                        vec3 forcedGlowColor = vec3(1.0, 1.0, 1.0); // Bianco puro
+                        vec3 forcedAmbientColor = vec3(0.53, 0.53, 0.53); // Grigio chiaro
                         
-                        // Glow semplice sui bordi
+                        // Lighting base con colori forzati
+                        float NdotL = max(dot(normal, vec3(1.0, 1.0, 1.0)), 0.0);
+                        vec3 diffuse = forcedColor * NdotL * 0.8;
+                        vec3 ambient = forcedAmbientColor * 0.4;
+                        
+                        // Glow migliorato sui bordi
                         float fresnel = 1.0 - dot(normal, vec3(0.0, 0.0, 1.0));
-                        vec3 glow = uGlowColor * pow(fresnel, 2.0) * 0.5;
+                        vec3 glow = forcedGlowColor * pow(fresnel, 2.0) * 1.2; // Aumentato ancora
                         
                         // Pulsazione semplice
                         float pulse = sin(uTime * 0.3) * 0.1 + 0.9;
@@ -514,12 +501,12 @@ async function loadModel() {
             
             const shaderMaterial = new THREE.ShaderMaterial({
                 uniforms: {
-                    uColor: { value: window.innerWidth > 768 ? new THREE.Color(0xffffff) : new THREE.Color(0x004466) }, // Bianco su desktop, blu su mobile
+                    uColor: { value: new THREE.Color(0xffffff) }, // Sempre bianco
                     uGlowColor: { value: new THREE.Color(0xffffff) }, // Glow bianco come le scritte
                     uTime: { value: 0 },
                     uIntensity: { value: 2.0 }, // Più intensità
                     uLightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-                    uAmbientColor: { value: window.innerWidth > 768 ? new THREE.Color(0x888888) : new THREE.Color(0x002244) } // Ambient grigio su desktop, scuro su mobile
+                    uAmbientColor: { value: new THREE.Color(0x888888) } // Sempre grigio chiaro
                 },
                 vertexShader: vertexShader,
                 fragmentShader: fragmentShader,
@@ -528,32 +515,19 @@ async function loadModel() {
             });
             
             model = new THREE.Mesh(geometry, shaderMaterial);
-            model.scale.set(fallbackScale, fallbackScale, fallbackScale);
+            updateModelScale(); // Applica la scala responsive
             model.castShadow = false;
             model.receiveShadow = false;
             
-            // Posiziona il modello fallback nella stessa posizione del circle-border
-            const circleBorder = document.querySelector('.circle-border');
-            if (circleBorder) {
-                const rect = circleBorder.getBoundingClientRect();
-                // Converti le coordinate schermo del circle-border a coordinate Three.js normalizzate (-1 a 1)
-                const x = ((rect.left + rect.width / 2) / window.innerWidth) * 2 - 1;
-                const y = ((rect.top + rect.height / 2) / window.innerHeight) * 2 - 1;
-                
-                // Calcola la posizione 3D usando la distanza Z del modello (davanti alla camera)
-                const distance = 5; // Distanza Z della camera
-                const posX = x * distance * camera.aspect;
-                const posY = y * distance;
-                
-                // Posiziona il modello alla stessa posizione X,Y del circle-border
-                model.position.x = posX;
-                model.position.y = posY;
-                model.position.z = 0; // Mantieni il modello sul piano Z=0
-            }
+            // Posiziona il modello fallback usando la funzione centralizzata
+            updateModelPosition();
             
             shaderMaterials.push(shaderMaterial); // Aggiungi all'array
             scene.add(model);
             console.log('Modello fallback creato con shader personalizzato'); // Debug
+            
+            // Assicura che il colore sia sempre bianco all'inizializzazione
+            updateModelColor();
         }
         createFallbackModel();
     }
@@ -647,22 +621,18 @@ function onTouchStart(event) {
     isInteracting = true;
     lastInteractionTime = performance.now();
     
-    // Gestisci il primo tocco
     const touch = event.touches[0];
     updateTouchPosition(touch);
 }
 
 function onTouchMove(event) {
-    
     if (event.touches.length > 0) {
         const touch = event.touches[0];
         const deltaX = Math.abs(touch.clientX - touchStartX);
         const deltaY = Math.abs(touch.clientY - touchStartY);
         
-        // Se il movimento supera la soglia, consideralo un movimento e non un tap
         if (deltaX > TAP_THRESHOLD || deltaY > TAP_THRESHOLD) {
             hasMoved = true;
-            event.preventDefault(); // Previene scrolling solo se è un movimento
         }
         
         lastInteractionTime = performance.now();
@@ -671,14 +641,13 @@ function onTouchMove(event) {
 }
 
 function onTouchEnd(event) {
-    
     const touchEndTime = performance.now();
     const touchDuration = touchEndTime - touchStartTime;
     
-    // Previene il comportamento di default solo se è stato un movimento
-    if (hasMoved) {
-        event.preventDefault();
-    }
+    // Non prevenire più il comportamento di default per permettere scrolling normale
+    // if (hasMoved) {
+    //     event.preventDefault();
+    // }
     
     isInteracting = false;
     
@@ -808,7 +777,7 @@ function startModelPowerOff() {
         if (material && material.uniforms) {
             initialStates.push({
                 material: material,
-                initialColor: material.uniforms.uColor ? material.uniforms.uColor.value.clone() : new THREE.Color(0x004466),
+                initialColor: material.uniforms.uColor ? material.uniforms.uColor.value.clone() : new THREE.Color(0xffffff),
                 initialGlowColor: material.uniforms.uGlowColor ? material.uniforms.uGlowColor.value.clone() : new THREE.Color(0xffffff),
                 initialIntensity: material.uniforms.uIntensity ? material.uniforms.uIntensity.value : 2.0,
                 initialAmbientColor: material.uniforms.uAmbientColor ? material.uniforms.uAmbientColor.value.clone() : new THREE.Color(0x112244)
@@ -831,7 +800,8 @@ function startModelPowerOff() {
         // Spegni gradualmente tutti gli effetti luminosi
         initialStates.forEach(state => {
             if (state.material && state.material.uniforms) {
-                state.material.uniforms.uColor.value = state.initialColor.lerp(blackColor, smoothProgress);
+                // MANTIENE il colore fisso durante lo spegnimento - non cambia colore
+                // state.material.uniforms.uColor.value = state.initialColor.lerp(blackColor, smoothProgress);
                 state.material.uniforms.uGlowColor.value = state.initialGlowColor.lerp(blackColor, smoothProgress);
                 state.material.uniforms.uIntensity.value = state.initialIntensity * (1 - smoothProgress); // Riduci intensità a 0
                 state.material.uniforms.uAmbientColor.value = state.initialAmbientColor.lerp(blackColor, smoothProgress);
@@ -844,7 +814,8 @@ function startModelPowerOff() {
             // Assicurati che tutto sia completamente spento alla fine
             initialStates.forEach(state => {
                 if (state.material && state.material.uniforms) {
-                    state.material.uniforms.uColor.value = blackColor;
+                    // MANTIENE il colore fisso anche alla fine - non cambia colore
+            // state.material.uniforms.uColor.value = blackColor;
                     state.material.uniforms.uGlowColor.value = blackColor;
                     state.material.uniforms.uIntensity.value = 0;
                     state.material.uniforms.uAmbientColor.value = blackColor;
@@ -966,27 +937,89 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
     
-    // Aggiorna la scala del modello quando cambia la dimensione della finestra
+    // Aggiorna la scala e la posizione del modello quando cambia la dimensione della finestra
     if (model) {
         updateModelScale();
+        updateModelPosition();
         updateModelColor();
     }
 }
 
-// Funzione per aggiornare la scala del modello in base alla dimensione corrente
+// Funzione per aggiornare la scala del modello in base a vw e vh
 function updateModelScale() {
     if (!model) return;
     
-    let modelScale = 0.05; // Default desktop scale
+    // Calcola la scala base usando vw (viewport width) e vh (viewport height)
+    const vw = window.innerWidth / 100; // 1vw in pixel
+    const vh = window.innerHeight / 100; // 1vh in pixel
+    
+    // Scala puramente responsive basata sulle dimensioni della finestra
+    let baseScale;
+    
     if (window.innerWidth <= 768) {
-        modelScale = 0.03; // Ridotto per tablet
-    }
-    if (window.innerWidth <= 480) {
-        modelScale = 0.02; // Ancora più ridotto per small mobile
+        // Scala per mobile
+        baseScale = Math.min(vw * 0.006, vh * 0.008);
+    } else {
+        // Scala per desktop
+        baseScale = Math.min(vw * 0.007, vh * 0.005);
     }
     
-    model.scale.set(modelScale, modelScale, modelScale);
-    console.log('Model scale updated:', modelScale);
+    // Calcola il massimo basato sulle dimensioni del circle-border
+    const circleBorder = document.querySelector('.circle-border');
+    if (circleBorder) {
+        const rect = circleBorder.getBoundingClientRect();
+        // Usa un valore massimo fisso appropriato per display 2K
+        const maxScale = 0.05; // Massimo ridotto per evitare dimensioni eccessive su 2K
+        // Usa un valore minimo per mantenere le proporzioni quando lo schermo si rimpicciolisce
+        const minScale = 0.015; // Minimo per non diventare troppo piccolo su schermi piccoli
+        
+        // Aumenta i limiti per finestre verticali strette per corrispondere al circle-border più grande (60%)
+        let adjustedMaxScale = maxScale;
+        let adjustedMinScale = minScale;
+        
+        if (window.innerHeight > window.innerWidth) { // Finestra verticale
+            adjustedMaxScale = 0.06; // Ridotto da 0.08 per corrispondere al 60% del circle-border
+            adjustedMinScale = 0.02; // Ridotto da 0.025 per corrispondere al 60% del circle-border
+        }
+        
+        console.log('Circle border dimensions:', rect.width, 'x', rect.height, 'minScale:', adjustedMinScale, 'maxScale:', adjustedMaxScale);
+        console.log('Base scale before limits:', baseScale);
+        baseScale = Math.max(adjustedMinScale, Math.min(baseScale, adjustedMaxScale));
+        console.log('Final scale after limits:', baseScale);
+    }
+    
+    // Applica la scala al modello
+    model.scale.set(baseScale, baseScale, baseScale);
+    console.log('Model scale updated:', baseScale, 'screen:', window.innerWidth + 'x' + window.innerHeight);
+}
+
+// Funzione per aggiornare la posizione del modello in base al circle-border
+function updateModelPosition() {
+    if (!model) return;
+    
+    // Posiziona il modello 3D nella stessa posizione del circle-border
+    const circleBorder = document.querySelector('.circle-border');
+    if (circleBorder) {
+        const rect = circleBorder.getBoundingClientRect();
+        
+        // Calcola la posizione relativa del circle-border rispetto al centro della pagina
+        const pageCenterX = window.innerWidth / 2;
+        const pageCenterY = window.innerHeight / 2;
+        const circleCenterX = rect.left + rect.width / 2;
+        const circleCenterY = rect.top + rect.height / 2;
+        
+        // Calcola l'offset dal centro della pagina
+        const offsetX = circleCenterX - pageCenterX;
+        const offsetY = circleCenterY - pageCenterY;
+        
+        // Scala puramente responsive basata sulle dimensioni della finestra
+        const scaleFactor = window.innerWidth <= 768 ? 0.0008 : 0.0015;
+        
+        model.position.x = offsetX * scaleFactor;
+        model.position.y = (-offsetY * scaleFactor) - 0.1; // Spostato più in basso di 0.1 unità
+        
+        console.log('Model position updated:', model.position.x, model.position.y, 'screen:', window.innerWidth + 'x' + window.innerHeight);
+    }
 }
 
 // Gestione scrolling
@@ -1031,20 +1064,18 @@ function onScroll() {
 // Funzione per aggiornare il colore del modello in base alla dimensione corrente
 function updateModelColor() {
     if (!shaderMaterials.length) return;
-    
+
+    // MANTIENE SEMPRE il colore bianco per il modello, qualsiasi cosa accada
+    const fixedColor = new THREE.Color(0xffffff); // Bianco fisso
+    const fixedAmbientColor = new THREE.Color(0x888888); // Ambient grigio chiaro fisso
+
     shaderMaterials.forEach(material => {
         if (material && material.uniforms) {
-            // Usa sempre bianco per il modello principale su desktop
-            if (window.innerWidth > 768) {
-                material.uniforms.uColor.value = new THREE.Color(0xffffff); // Bianco
-                material.uniforms.uAmbientColor.value = new THREE.Color(0x888888); // Ambient grigio chiaro
-            } else {
-                material.uniforms.uColor.value = new THREE.Color(0x004466); // Blu per mobile
-                material.uniforms.uAmbientColor.value = new THREE.Color(0x112244); // Ambient scuro
-            }
+            material.uniforms.uColor.value = fixedColor; // Sempre bianco
+            material.uniforms.uAmbientColor.value = fixedAmbientColor; // Sempre grigio chiaro
         }
     });
-    console.log('Model color updated for screen width:', window.innerWidth);
+    console.log('Model color maintained as white (fixed)');
 }
 
 // Funzione per applicare il font Parisienne alle prime lettere - DISABILITATA per mantenere le classi dei font
