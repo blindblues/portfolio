@@ -24,6 +24,13 @@ let hasMoved = false;
 const TAP_THRESHOLD = 10; // Pixel massimi per considerare un tap
 const TAP_TIME_THRESHOLD = 200; // Millisecondi massimi per considerare un tap
 
+// Variabili per touch scrolling
+let touchStartScrollY = 0;
+let touchStartScrollX = 0;
+let isScrolling = false;
+const SWIPE_THRESHOLD = 50; // Pixel minimi per considerare uno swipe
+const SCROLL_SENSITIVITY = 1.2; // Sensibilità dello scroll touch
+
 // Variabili per animazione idle
 let idleTimer = 0;
 let idleTargetRotationX = 0;
@@ -618,6 +625,11 @@ function onTouchStart(event) {
     touchStartY = event.touches[0].clientY;
     hasMoved = false;
     
+    // Registra posizione per scroll
+    touchStartScrollY = window.scrollY;
+    touchStartScrollX = window.scrollX;
+    isScrolling = false;
+    
     isInteracting = true;
     lastInteractionTime = performance.now();
     
@@ -635,7 +647,25 @@ function onTouchMove(event) {
             hasMoved = true;
         }
         
+        // Check se è un movimento verticale significativo (scroll gesture)
+        if (deltaY > SWIPE_THRESHOLD && !isScrolling) {
+            isScrolling = true;
+            
+            // Calcola la direzione e la velocità dello scroll
+            const scrollDeltaY = (touchStartY - touch.clientY) * SCROLL_SENSITIVITY;
+            const currentScrollY = window.scrollY;
+            const targetScrollY = touchStartScrollY + scrollDeltaY;
+            
+            // Applica lo scroll smooth
+            window.scrollTo({
+                top: targetScrollY,
+                behavior: 'auto' // Usa 'auto' per reattività immediata
+            });
+        }
+        
         lastInteractionTime = performance.now();
+        
+        // SEMPRE aggiorna la posizione 3D mentre il touch è attivo, anche durante lo scroll
         updateTouchPosition(touch);
     }
 }
@@ -644,28 +674,23 @@ function onTouchEnd(event) {
     const touchEndTime = performance.now();
     const touchDuration = touchEndTime - touchStartTime;
     
-    // Non prevenire più il comportamento di default per permettere scrolling normale
-    // if (hasMoved) {
-    //     event.preventDefault();
-    // }
-    
+    // Resetta sempre le variabili di scrolling
+    isScrolling = false;
     isInteracting = false;
     
-    // Resetta gradualmente alla posizione centrale solo se è stato un movimento
-    if (hasMoved) {
-        const resetAnimation = () => {
-            mouseX += (0 - mouseX) * 0.1;
-            mouseY += (0 - mouseY) * 0.1;
-            
-            if (Math.abs(mouseX) > 0.01 || Math.abs(mouseY) > 0.01) {
-                requestAnimationFrame(resetAnimation);
-            } else {
-                mouseX = 0;
-                mouseY = 0;
-            }
-        };
-        resetAnimation();
-    }
+    // SEMPRE anima il ritorno alla posizione centrale quando il touch termina
+    const resetAnimation = () => {
+        mouseX += (0 - mouseX) * 0.08; // Stessa velocità del mouse leave per consistenza
+        mouseY += (0 - mouseY) * 0.08;
+        
+        if (Math.abs(mouseX) > 0.005 || Math.abs(mouseY) > 0.005) {
+            requestAnimationFrame(resetAnimation);
+        } else {
+            mouseX = 0;
+            mouseY = 0;
+        }
+    };
+    resetAnimation();
     
     // Resetta le variabili del touch
     hasMoved = false;
@@ -826,15 +851,6 @@ function startModelPowerOff() {
     }
     
     animateModelPowerOff();
-}
-
-// Funzione per avviare l'espansione del cerchio nero sfuocato
-function startVoidExpansion() {
-    const voidCircle = document.getElementById('voidCircle');
-    if (voidCircle) {
-        console.log('Inizio espansione del cerchio nero'); // Debug
-        voidCircle.classList.add('expanding');
-    }
 }
 
 // Animazione ottimizzata senza frame skipping

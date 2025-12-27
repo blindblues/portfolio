@@ -114,9 +114,8 @@ body::-webkit-scrollbar {
 #about [data-scroll],
 #portfolio [data-scroll],
 #contact [data-scroll] {
-    opacity: 0;
-    transition: opacity 0.3s ease-out, transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    will-change: opacity, transform;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
 }
 
 /* Stato attivo durante lo scroll */
@@ -287,6 +286,19 @@ body::-webkit-scrollbar {
         position: relative !important;
     }
     
+    /* Improve touch scrolling */
+    body {
+        touch-action: pan-y !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: contain !important;
+    }
+    
+    /* Canvas touch optimization */
+    #canvas3d, #underwater-canvas, #noise-canvas {
+        touch-action: none !important;
+        pointer-events: none !important;
+    }
+    
     .section-content {
         padding: 0 20px;
     }
@@ -299,14 +311,23 @@ body::-webkit-scrollbar {
         font-size: 1.2rem;
     }
     
-    /* Mobile-specific canvas constraints */
+    /* Mobile-specific canvas constraints - scroll con il contenuto su mobile */
     #canvas3d, #underwater-canvas, #noise-canvas {
         width: 100vw !important;
         max-width: 100vw !important;
         overflow: hidden !important;
-        position: fixed !important;
+        position: absolute !important; /* Cambiato da fixed a absolute su mobile */
         left: 0 !important;
         right: 0 !important;
+        top: 0 !important;
+        height: 100vh !important;
+    }
+    
+    /* Allinea il canvas 3D con il circle border su mobile */
+    #canvas3d {
+        left: 50% !important;
+        top: 39% !important; /* Allineato con la posizione effettiva del circle border (20% + 80% * 35% = 48%) */
+        transform: translate(-50%, -50%) !important;
     }
     
     /* Hero section mobile constraints */
@@ -317,19 +338,47 @@ body::-webkit-scrollbar {
         position: relative !important;
     }
     
-    /* Circle border mobile sizing */
+    /* Circle border mobile sizing and positioning */
     .circle-border {
-        width: min(40vh, 40vw);
-        height: min(40vh, 40vw);
+        width: min(50vh, 50vw) !important;
+        height: min(50vh, 50vw) !important;
+        top: 35% !important; /* Spostato più in basso: 35% di hero-bottom = 20% + (80% * 35%) = 48% totale della finestra */
+        transform: translate(-50%, -50%) !important; /* Mantiene il centraggio */
     }
     
-    /* Navigation mobile adjustments */
+    /* Ensure paragraph text is visible on mobile */
+    .section-text p {
+        opacity: 0.9 !important;
+        color: rgb(184, 192, 211) !important;
+        font-size: 1.2rem !important;
+        line-height: 1.8 !important;
+        transform: translateY(0) !important; /* Forza la posizione visibile */
+    }
+    
+    /* Navigation mobile adjustments - posiziona sotto il circle border */
     .nav-link {
-        font-size: 8vw !important;
+        font-size: 6vw !important;
     }
     
     .corner-tl, .corner-tr, .corner-bl, .corner-br {
-        transform: scale(0.8) !important;
+        position: absolute !important;
+        transform: none !important;
+        top: auto !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        z-index: 30 !important;
+        text-align: center;
+    }
+    
+    .corner-tl { bottom: 25vh !important; }
+    .corner-tr { bottom: 20vh !important; }
+    .corner-bl { bottom: 15vh !important; }
+    .corner-br { bottom: 10vh !important; }
+    
+    /* Emanuele logo mobile sizing */
+    .emanuele-logo img {
+        height: 25vh !important; /* Ridotto da 40vh a 30vh per mobile */
     }
     
     /* Nascondi le lance SVG su mobile */
@@ -513,31 +562,6 @@ body::-webkit-scrollbar {
     opacity: 1; /* Rende il circle border visibile */
 }
 
-/* Circle border più grande in finestre verticali e strette */
-@media (aspect-ratio <= 1/1) {
-    .circle-border {
-        width: min(80vh, 60vw);
-        height: min(80vh, 60vw);
-    }
-}
-
-.void-circle {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 100%);
-    filter: blur(60px);
-    z-index: 9999; /* Sopra tutti gli altri elementi */
-    pointer-events: none;
-    opacity: 0;
-    will-change: transform, opacity;
-    transition: opacity 0.1s ease;
-}
-
 .lance-left {
     position: absolute;
     top: 60%; /* Spostato nella seconda riga */
@@ -598,29 +622,6 @@ body::-webkit-scrollbar {
 .emanuele-logo:hover img {
     filter: url(#glow-hover);
 }
-
-.void-circle.expanding {
-    animation: voidExpand 1s cubic-bezier(0.005, 0.10, 0.45, 0.94) forwards;
-}
-
-@keyframes voidExpand {
-    0% {
-        width: 0;
-        height: 0;
-        opacity: 0;
-    }
-    10% {
-        opacity: 1;
-    }
-    100% {
-        width: 500vmax;
-        height: 500vmax;
-        opacity: 1;
-    }
-}
-
-/* Rimuovi keyframes per performance */
-/*@keyframes rotate rimossa */
 
 .hero-content {
     position: relative;
