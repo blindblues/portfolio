@@ -1,6 +1,7 @@
 # Large model files
 assets/models/buddha/source/finalized.zip
 assets/models/buddha/source/model_original.glb
+assets/models/buddha/source/model_compressed.glb
 *.zip
 
 # OS generated files
