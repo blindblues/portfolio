@@ -44,10 +44,10 @@ function initBuddha() {
     directionalLight2.position.set(-5, -5, -5);
     scene.add(directionalLight2);
 
-    // Load Buddha model from GitHub Releases
+    // Load Buddha model from jsDelivr CDN
     const loader = new THREE.GLTFLoader();
     loader.load(
-        'https://github.com/blindblues/portfolio/releases/download/v1.0.0/model.glb',
+        'https://cdn.jsdelivr.net/gh/blindblues/portfolio@v1.0.0/assets/models/buddha/source/model.glb',
         function (gltf) {
             buddha = gltf.scene;
             
