@@ -1,7 +1,7 @@
-# Large model files
-# assets/models/buddha/source/ - Now tracked with LFS
-# *.zip - Now tracked with LFS
-# *.glb - Now tracked with LFS
+# Large model files - hosted on GitHub Releases
+assets/models/buddha/source/
+*.zip
+*.glb
 
 # OS generated files
 .DS_Store
