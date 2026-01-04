@@ -4,21 +4,8 @@ let scrollY = 0;
 let maxScrollY = 0;
 
 function initBuddha() {
-    console.log('Initializing Buddha 3D model...');
-    
     const container = document.getElementById('buddha-container');
-    if (!container) {
-        console.error('Buddha container not found!');
-        return;
-    }
-    console.log('Container found:', container);
-
-    // Check if THREE is loaded
-    if (typeof THREE === 'undefined') {
-        console.error('THREE.js is not loaded!');
-        return;
-    }
-    console.log('THREE.js loaded successfully');
+    if (!container) return;
 
     // Scene setup
     scene = new THREE.Scene();
@@ -57,39 +44,46 @@ function initBuddha() {
     directionalLight2.position.set(-5, -5, -5);
     scene.add(directionalLight2);
 
-    // Create procedural Buddha-like geometry as temporary solution
-    const geometry = new THREE.TorusKnotGeometry(1, 0.3, 100, 16);
-    const material = new THREE.MeshPhongMaterial({ 
-        color: 0x87CEEB,
-        emissive: 0x202020,
-        shininess: 100,
-        specular: 0x222222
-    });
-    
-    buddha = new THREE.Mesh(geometry, material);
-    
-    // Create a group to control the model
-    const buddhaGroup = new THREE.Group();
-    buddhaGroup.add(buddha);
-    
-    // Scale the model appropriately
-    const isMobile = window.innerWidth <= 768;
-    const scale = isMobile ? 1.5 : 3;
-    buddhaGroup.scale.set(scale, scale, scale);
-    
-    // Reset all rotations
-    buddha.rotation.set(0, 0, 0);
-    
-    // Posiziona il modello al centro della viewport
-    buddha.position.y = isMobile ? -0.5 : -0.1;
-    
-    // Add group to scene
-    scene.add(buddhaGroup);
-    
-    // Replace buddha reference with the group
-    buddha = buddhaGroup;
-    
-    console.log('Procedural 3D model created successfully');
+    // Load Buddha model
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+        'assets/models/buddha/source/model.glb',
+        function (gltf) {
+            buddha = gltf.scene;
+            
+            // Create a group to control the model
+            const buddhaGroup = new THREE.Group();
+            buddhaGroup.add(buddha);
+            
+            // Center and scale the model within the group
+            const box = new THREE.Box3().setFromObject(buddha);
+            const center = box.getCenter(new THREE.Vector3());
+            buddha.position.sub(center);
+            
+            const size = box.getSize(new THREE.Vector3());
+            const isMobile = window.innerWidth <= 768;
+            const scale = isMobile ? 2 / size.x : 6 / size.x; 
+            buddha.scale.multiplyScalar(scale);
+            
+            // Reset all rotations
+            buddha.rotation.set(0, 0, 0);
+            
+            // Posiziona il modello al centro della viewport (metà altezza)
+            buddha.position.y = isMobile ? -0.5 : -0.1; // Posizioni diverse per mobile e desktop
+            
+            // Add group to scene instead of direct model
+            scene.add(buddhaGroup);
+            
+            // Replace buddha reference with the group
+            buddha = buddhaGroup;
+        },
+        function (xhr) {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        function (error) {
+            console.error('An error happened', error);
+        }
+    );
 
     // Mouse move listener for rotation
     document.addEventListener('mousemove', onMouseMove);
