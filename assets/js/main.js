@@ -56,9 +56,9 @@ function initBuddha() {
     // Set a timeout for loading
     const loadingTimeout = setTimeout(() => {
         if (!buddha) {
-            console.log('Loading timeout - using fallback');
-            loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Timeout caricamento, uso fallback...';
-            createFallbackModel();
+            console.log('Loading timeout - model failed to load');
+            loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Modello 3D non disponibile';
+            setTimeout(() => loadingDiv.remove(), 3000);
         }
     }, 8000); // 8 seconds timeout for large OBJ file
     
@@ -132,15 +132,15 @@ function initBuddha() {
             function (error) {
                 console.error(`Error loading OBJ from ${currentUrl}:`, error);
                 
-                // Try next URL or fallback
+                // Try next URL
                 urlIndex++;
                 if (urlIndex < objUrls.length) {
                     console.log('Trying next URL...');
                     tryLoadOBJ();
                 } else {
                     clearTimeout(loadingTimeout);
-                    loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Errore caricamento OBJ, uso fallback...';
-                    createFallbackModel();
+                    loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Errore caricamento modello 3D';
+                    setTimeout(() => loadingDiv.remove(), 3000);
                 }
             }
         );
@@ -148,29 +148,6 @@ function initBuddha() {
     
     // Start loading
     tryLoadOBJ();
-    
-    function createFallbackModel() {
-        setTimeout(() => {
-            loadingDiv.remove();
-            
-            // Create a more interesting fallback geometry
-            const fallbackGeometry = new THREE.TorusKnotGeometry(1, 0.3, 100, 16);
-            const fallbackMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0x87CEEB,
-                specular: 0x222222,
-                shininess: 100,
-                wireframe: false
-            });
-            const fallbackMesh = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
-            
-            const fallbackGroup = new THREE.Group();
-            fallbackGroup.add(fallbackMesh);
-            scene.add(fallbackGroup);
-            buddha = fallbackGroup;
-            
-            console.log('Fallback torus knot created');
-        }, 1000);
-    }
 
     // Mouse move listener for rotation
     document.addEventListener('mousemove', onMouseMove);
