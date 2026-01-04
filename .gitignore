@@ -2,6 +2,8 @@
 assets/models/buddha/source/finalized.zip
 assets/models/buddha/source/model_original.glb
 assets/models/buddha/source/model_compressed.glb
+assets/models/buddha/source/untitled.obj
+assets/models/buddha/source/untitled.mtl
 *.zip
 
 # OS generated files

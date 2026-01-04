@@ -44,12 +44,33 @@ function initBuddha() {
     directionalLight2.position.set(-5, -5, -5);
     scene.add(directionalLight2);
 
-    // Load Buddha model
+    // Load GLB model with timeout and better error handling
     const loader = new THREE.GLTFLoader();
+    
+    // Show loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #87CEEB; font-family: Poppins; font-size: 18px; z-index: 10;';
+    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Caricamento modello 3D...';
+    container.appendChild(loadingDiv);
+    
+    // Set a timeout for loading
+    const loadingTimeout = setTimeout(() => {
+        if (!buddha) {
+            console.log('Loading timeout - using fallback');
+            loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Timeout caricamento, uso fallback...';
+            createFallbackModel();
+        }
+    }, 5000); // 5 seconds timeout
+    
+    // Try to load the GLB model
     loader.load(
         'assets/models/buddha/source/model.glb',
         function (gltf) {
+            clearTimeout(loadingTimeout);
             buddha = gltf.scene;
+            
+            // Remove loading indicator
+            loadingDiv.remove();
             
             // Create a group to control the model
             const buddhaGroup = new THREE.Group();
@@ -76,14 +97,45 @@ function initBuddha() {
             
             // Replace buddha reference with the group
             buddha = buddhaGroup;
+            
+            console.log('GLB model loaded successfully');
         },
         function (xhr) {
-            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+            if (xhr.lengthComputable) {
+                const percentComplete = (xhr.loaded / xhr.total * 100).toFixed(1);
+                loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Caricamento modello 3D... ${percentComplete}%`;
+            }
         },
         function (error) {
-            console.error('An error happened', error);
+            clearTimeout(loadingTimeout);
+            console.error('Error loading GLB model:', error);
+            loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Errore caricamento GLB, uso fallback...';
+            createFallbackModel();
         }
     );
+    
+    function createFallbackModel() {
+        setTimeout(() => {
+            loadingDiv.remove();
+            
+            // Create a more interesting fallback geometry
+            const fallbackGeometry = new THREE.TorusKnotGeometry(1, 0.3, 100, 16);
+            const fallbackMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x87CEEB,
+                specular: 0x222222,
+                shininess: 100,
+                wireframe: false
+            });
+            const fallbackMesh = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
+            
+            const fallbackGroup = new THREE.Group();
+            fallbackGroup.add(fallbackMesh);
+            scene.add(fallbackGroup);
+            buddha = fallbackGroup;
+            
+            console.log('Fallback torus knot created');
+        }, 1000);
+    }
 
     // Mouse move listener for rotation
     document.addEventListener('mousemove', onMouseMove);
