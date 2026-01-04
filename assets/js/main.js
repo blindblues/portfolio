@@ -63,7 +63,12 @@ function initBuddha() {
     }, 8000); // 8 seconds timeout for large OBJ file
     
     // Try multiple URLs for the OBJ model (GitHub Pages LFS workaround)
-    const objUrls = [
+    // In locale, prova prima il file locale; su GitHub Pages, il CDN dovrebbe funzionare
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const objUrls = isLocalhost ? [
+        'assets/models/buddha/source/model.obj',
+        'https://raw.githubusercontent.com/blindblues/portfolio/master/assets/models/buddha/source/model.obj'
+    ] : [
         'https://raw.githubusercontent.com/blindblues/portfolio/master/assets/models/buddha/source/model.obj',
         'assets/models/buddha/source/model.obj'
     ];
