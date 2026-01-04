@@ -4,8 +4,21 @@ let scrollY = 0;
 let maxScrollY = 0;
 
 function initBuddha() {
+    console.log('Initializing Buddha 3D model...');
+    
     const container = document.getElementById('buddha-container');
-    if (!container) return;
+    if (!container) {
+        console.error('Buddha container not found!');
+        return;
+    }
+    console.log('Container found:', container);
+
+    // Check if THREE is loaded
+    if (typeof THREE === 'undefined') {
+        console.error('THREE.js is not loaded!');
+        return;
+    }
+    console.log('THREE.js loaded successfully');
 
     // Scene setup
     scene = new THREE.Scene();
