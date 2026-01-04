@@ -44,7 +44,7 @@ function initBuddha() {
     directionalLight2.position.set(-5, -5, -5);
     scene.add(directionalLight2);
 
-    // Load GLB model with timeout and better error handling
+    // Load GLB model with GitHub Pages LFS workaround
     const loader = new THREE.GLTFLoader();
     
     // Show loading indicator
@@ -62,57 +62,80 @@ function initBuddha() {
         }
     }, 5000); // 5 seconds timeout
     
-    // Try to load the GLB model
-    loader.load(
-        'assets/models/buddha/source/model.glb',
-        function (gltf) {
-            clearTimeout(loadingTimeout);
-            buddha = gltf.scene;
-            
-            // Remove loading indicator
-            loadingDiv.remove();
-            
-            // Create a group to control the model
-            const buddhaGroup = new THREE.Group();
-            buddhaGroup.add(buddha);
-            
-            // Center and scale the model within the group
-            const box = new THREE.Box3().setFromObject(buddha);
-            const center = box.getCenter(new THREE.Vector3());
-            buddha.position.sub(center);
-            
-            const size = box.getSize(new THREE.Vector3());
-            const isMobile = window.innerWidth <= 768;
-            const scale = isMobile ? 2 / size.x : 6 / size.x; 
-            buddha.scale.multiplyScalar(scale);
-            
-            // Reset all rotations
-            buddha.rotation.set(0, 0, 0);
-            
-            // Posiziona il modello al centro della viewport (metà altezza)
-            buddha.position.y = isMobile ? -0.5 : -0.1; // Posizioni diverse per mobile e desktop
-            
-            // Add group to scene instead of direct model
-            scene.add(buddhaGroup);
-            
-            // Replace buddha reference with the group
-            buddha = buddhaGroup;
-            
-            console.log('GLB model loaded successfully');
-        },
-        function (xhr) {
-            if (xhr.lengthComputable) {
-                const percentComplete = (xhr.loaded / xhr.total * 100).toFixed(1);
-                loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Caricamento modello 3D... ${percentComplete}%`;
+    // Try multiple URLs for the GLB model (GitHub Pages LFS workaround)
+    const glbUrls = [
+        'https://raw.githubusercontent.com/blindblues/portfolio/master/assets/models/buddha/source/model.glb',
+        'assets/models/buddha/source/model.glb'
+    ];
+    
+    let urlIndex = 0;
+    
+    function tryLoadGLB() {
+        const currentUrl = glbUrls[urlIndex];
+        console.log(`Trying to load GLB from: ${currentUrl}`);
+        
+        loader.load(
+            currentUrl,
+            function (gltf) {
+                clearTimeout(loadingTimeout);
+                buddha = gltf.scene;
+                
+                // Remove loading indicator
+                loadingDiv.remove();
+                
+                // Create a group to control the model
+                const buddhaGroup = new THREE.Group();
+                buddhaGroup.add(buddha);
+                
+                // Center and scale the model within the group
+                const box = new THREE.Box3().setFromObject(buddha);
+                const center = box.getCenter(new THREE.Vector3());
+                buddha.position.sub(center);
+                
+                const size = box.getSize(new THREE.Vector3());
+                const isMobile = window.innerWidth <= 768;
+                const scale = isMobile ? 2 / size.x : 6 / size.x; 
+                buddha.scale.multiplyScalar(scale);
+                
+                // Reset all rotations
+                buddha.rotation.set(0, 0, 0);
+                
+                // Posiziona il modello al centro della viewport (metà altezza)
+                buddha.position.y = isMobile ? -0.5 : -0.1; // Posizioni diverse per mobile e desktop
+                
+                // Add group to scene instead of direct model
+                scene.add(buddhaGroup);
+                
+                // Replace buddha reference with the group
+                buddha = buddhaGroup;
+                
+                console.log('GLB model loaded successfully from:', currentUrl);
+            },
+            function (xhr) {
+                if (xhr.lengthComputable) {
+                    const percentComplete = (xhr.loaded / xhr.total * 100).toFixed(1);
+                    loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Caricamento modello 3D... ${percentComplete}%`;
+                }
+            },
+            function (error) {
+                console.error(`Error loading GLB from ${currentUrl}:`, error);
+                
+                // Try next URL or fallback
+                urlIndex++;
+                if (urlIndex < glbUrls.length) {
+                    console.log('Trying next URL...');
+                    tryLoadGLB();
+                } else {
+                    clearTimeout(loadingTimeout);
+                    loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Errore caricamento GLB, uso fallback...';
+                    createFallbackModel();
+                }
             }
-        },
-        function (error) {
-            clearTimeout(loadingTimeout);
-            console.error('Error loading GLB model:', error);
-            loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Errore caricamento GLB, uso fallback...';
-            createFallbackModel();
-        }
-    );
+        );
+    }
+    
+    // Start loading
+    tryLoadGLB();
     
     function createFallbackModel() {
         setTimeout(() => {
