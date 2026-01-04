@@ -1,7 +1,7 @@
 # Large model files
-assets/models/buddha/source/
+assets/models/buddha/source/finalized.zip
+assets/models/buddha/source/model_original.glb
 *.zip
-*.glb
 
 # OS generated files
 .DS_Store
