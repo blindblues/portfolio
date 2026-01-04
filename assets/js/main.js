@@ -44,10 +44,10 @@ function initBuddha() {
     directionalLight2.position.set(-5, -5, -5);
     scene.add(directionalLight2);
 
-    // Load Buddha model from jsDelivr CDN
+    // Load Buddha model from Cloudflare R2 CDN
     const loader = new THREE.GLTFLoader();
     loader.load(
-        'https://cdn.jsdelivr.net/gh/blindblues/portfolio@v1.0.0/assets/models/buddha/source/model.glb',
+        'https://portfolio-assets.your-account.r2.cloudflarestorage.com/model.glb',
         function (gltf) {
             buddha = gltf.scene;
             
