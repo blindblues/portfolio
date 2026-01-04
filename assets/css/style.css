@@ -170,7 +170,16 @@ body {
     background-image: url('../images/Photo-Wallpaper-Sky-Blue_big01.jpg');
     background-size: cover;
     background-position: center;
-    background-attachment: fixed;
+    background-attachment: scroll;
+}
+
+/* Mobile responsive background */
+@media (max-width: 768px) {
+    .hero-image-container {
+        background-attachment: scroll;
+        background-position: center center;
+        background-size: cover;
+    }
 }
 
 .hero-content {
@@ -254,7 +263,7 @@ section {
 
 /* Sezione Chi Sono */
 .about {
-    background: var(--pale-sky);
+    background: var(--cloud-white);
 }
 
 .about-content {
