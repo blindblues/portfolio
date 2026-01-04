@@ -47,7 +47,7 @@ function initBuddha() {
     // Load Buddha model from Cloudflare R2 CDN
     const loader = new THREE.GLTFLoader();
     loader.load(
-        'https://portfolio-assets.your-account.r2.cloudflarestorage.com/model.glb',
+        'https://pub-3bb0eda80e0049a99a1c007c2e323f15.r2.dev/model.glb',
         function (gltf) {
             buddha = gltf.scene;
             
