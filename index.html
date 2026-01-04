@@ -4,152 +4,249 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emanuele Greco</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23000000'/><text x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='%23ffffff'>EG</text></svg>">
     <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
-    <link rel="shortcut icon" type="image/x-icon" href="assets/icons/favicon.ico">
     <link rel="manifest" href="assets/site.webmanifest">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@400;500;600;700&family=Luxurious+Script&family=Instrument+Serif:wght@400;500;600;700&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.4/dist/locomotive-scroll.css">
     <link rel="stylesheet" href="assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
-<body data-scroll-container>
-    
-    <canvas id="canvas3d"></canvas>
-    <canvas id="underwater-canvas"></canvas>
-    <canvas id="noise-canvas"></canvas>
-    
-    <!-- Lance SVG Left -->
-    <div class="lance-left">
-        <img src="assets/images/Lance.svg" alt="Lance Left" />
-    </div>
-    
-    <!-- Lance SVG Right (mirrored and rotated) -->
-    <div class="lance-right">
-        <img src="assets/images/Lance.svg" alt="Lance Right" />
-    </div>
-    
-    <section class="hero" id="hero">
-        <!-- Prima riga: 20% altezza con logo -->
-        <div class="hero-row hero-top">
-            <div class="emanuele-logo">
-                <img src="assets/images/Emanuele-Greco.png" alt="Emanuele Greco" />
+<body>
+    <!-- Navigazione -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>Emanuele<span class="accent">Greco</span></h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link">Home</a></li>
+                <li><a href="#about" class="nav-link">Chi Sono</a></li>
+                <li><a href="#portfolio" class="nav-link">Portfolio</a></li>
+                <li><a href="#contact" class="nav-link">Contatti</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         </div>
-        
-        <!-- Seconda riga: 80% altezza con elementi interattivi -->
-        <div class="hero-row hero-bottom">
-            <div class="circle-border"></div>
+    </nav>
+
+    <!-- Sezione Hero -->
+    <section id="home" class="hero">
+        <div class="hero-background">
+            <div class="hero-image-container">
+                <!-- Qui verrà inserita l'immagine statica -->
+            </div>
+        </div>
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="greeting">Ciao, sono</span>
+                <span class="name">Emanuele Greco</span>
+                <span class="role">Graphic Designer & Creative Mind</span>
+            </h1>
+            <p class="hero-subtitle">Trasformo idee in esperienze visive uniche e memorabili</p>
+        </div>
+        <div id="buddha-container"></div>
+    </section>
+
+    <!-- Sezione Chi Sono -->
+    <section id="about" class="about">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Chi Sono</h2>
+                <div class="divider"></div>
+            </div>
+            <div class="about-content">
+                <div class="about-text">
+                    <h3>Creatività senza limiti</h3>
+                    <p>Sono un graphic designer con oltre 5 anni di esperienza nella creazione di identità visive uniche. La mia passione è trasformare concetti astratti in design tangibili che comunicano emozioni e raccontano storie.</p>
+                    <p>Specializzato in branding, web design e illustrazione, lavoro con clienti per dare vita alla loro visione creativa attraverso un approccio moderno e innovativo.</p>
+                    <div class="skills">
+                        <div class="skill-item">
+                            <i class="fas fa-palette"></i>
+                            <span>Branding</span>
+                        </div>
+                        <div class="skill-item">
+                            <i class="fas fa-laptop"></i>
+                            <span>Web Design</span>
+                        </div>
+                        <div class="skill-item">
+                            <i class="fas fa-pencil-ruler"></i>
+                            <span>Illustrazione</span>
+                        </div>
+                        <div class="skill-item">
+                            <i class="fas fa-mobile-alt"></i>
+                            <span>UI/UX Design</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-image">
+                    <div class="image-frame">
+                        <div class="image-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- About Section -->
-    <section id="about" class="content-section" data-scroll-section>
-        <div class="section-content" data-scroll data-scroll-speed="1" data-scroll-call="fadeInUp">
-            <h2 class="section-title" data-scroll data-scroll-speed="0.8" data-scroll-call="fadeInLeft">About</h2>
-            <div class="section-text" data-scroll data-scroll-speed="1.2" data-scroll-call="fadeInRight">
-                <p>Passionate developer creating immersive digital experiences through creative coding and innovative design.</p>
-                <p>Specializing in interactive web applications, 3D visualizations, and cutting-edge frontend technologies.</p>
+    <!-- Sezione Portfolio -->
+    <section id="portfolio" class="portfolio">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Portfolio</h2>
+                <div class="divider"></div>
+            </div>
+            <div class="portfolio-filters">
+                <button class="filter-btn active" data-filter="all">Tutti</button>
+                <button class="filter-btn" data-filter="branding">Branding</button>
+                <button class="filter-btn" data-filter="web">Web Design</button>
+                <button class="filter-btn" data-filter="illustration">Illustrazione</button>
+            </div>
+            <div class="portfolio-grid">
+                <div class="portfolio-item" data-category="branding">
+                    <div class="portfolio-image">
+                        <div class="image-placeholder">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                    </div>
+                    <div class="portfolio-overlay">
+                        <h3>Brand Identity Tech Startup</h3>
+                        <p>Creazione completa di identità visiva</p>
+                        <a href="#" class="view-project">Vedi Progetto</a>
+                    </div>
+                </div>
+                <div class="portfolio-item" data-category="web">
+                    <div class="portfolio-image">
+                        <div class="image-placeholder">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                    </div>
+                    <div class="portfolio-overlay">
+                        <h3>E-commerce Fashion</h3>
+                        <p>Web design e UI/UX</p>
+                        <a href="#" class="view-project">Vedi Progetto</a>
+                    </div>
+                </div>
+                <div class="portfolio-item" data-category="illustration">
+                    <div class="portfolio-image">
+                        <div class="image-placeholder">
+                            <i class="fas fa-paint-brush"></i>
+                        </div>
+                    </div>
+                    <div class="portfolio-overlay">
+                        <h3>Illustrazioni Editoriali</h3>
+                        <p>Serie di illustrazioni per magazine</p>
+                        <a href="#" class="view-project">Vedi Progetto</a>
+                    </div>
+                </div>
+                <div class="portfolio-item" data-category="branding">
+                    <div class="portfolio-image">
+                        <div class="image-placeholder">
+                            <i class="fas fa-coffee"></i>
+                        </div>
+                    </div>
+                    <div class="portfolio-overlay">
+                        <h3>Coffee Shop Branding</h3>
+                        <p>Restyling completo brand</p>
+                        <a href="#" class="view-project">Vedi Progetto</a>
+                    </div>
+                </div>
+                <div class="portfolio-item" data-category="web">
+                    <div class="portfolio-image">
+                        <div class="image-placeholder">
+                            <i class="fas fa-mobile"></i>
+                        </div>
+                    </div>
+                    <div class="portfolio-overlay">
+                        <h3>App Fitness Design</h3>
+                        <p>Design interfaccia mobile</p>
+                        <a href="#" class="view-project">Vedi Progetto</a>
+                    </div>
+                </div>
+                <div class="portfolio-item" data-category="illustration">
+                    <div class="portfolio-image">
+                        <div class="image-placeholder">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    </div>
+                    <div class="portfolio-overlay">
+                        <h3>Book Cover Design</h3>
+                        <p>Illustrazione e grafica</p>
+                        <a href="#" class="view-project">Vedi Progetto</a>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Portfolio Section -->
-    <section id="portfolio" class="content-section" data-scroll-section>
-        <div class="section-content" data-scroll data-scroll-speed="1" data-scroll-call="fadeInUp">
-            <h2 class="section-title" data-scroll data-scroll-speed="0.8" data-scroll-call="fadeInRight">Portfolio</h2>
-            <div class="section-text" data-scroll data-scroll-speed="1.2" data-scroll-call="fadeInLeft">
-                <p>Explore my collection of innovative projects and creative solutions.</p>
-                <p>Each project represents a unique challenge and an opportunity to push the boundaries of web development.</p>
+    <!-- Sezione Contatti -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Contattami</h2>
+                <div class="divider"></div>
+            </div>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <h3>Parliamo del tuo progetto</h3>
+                    <p>Sempre pronto a nuove sfide creative. Contattami per discutere come possiamo collaborare.</p>
+                    <div class="contact-details">
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>marco@cielogdesign.com</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <span>+39 333 1234567</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Milano, Italia</span>
+                        </div>
+                    </div>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-behance"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-dribbble"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="contact-form">
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <input type="text" id="name" name="name" placeholder="Il tuo nome" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="email" name="email" placeholder="La tua email" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="subject" name="subject" placeholder="Oggetto" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="message" name="message" rows="5" placeholder="Il tuo messaggio" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Invia Messaggio</button>
+                    </form>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Contact Section -->
-    <section id="contact" class="content-section" data-scroll-section>
-        <div class="section-content" data-scroll data-scroll-speed="1" data-scroll-call="fadeInUp">
-            <h2 class="section-title" data-scroll data-scroll-speed="0.8" data-scroll-call="fadeInLeft">Contact</h2>
-            <div class="section-text" data-scroll data-scroll-speed="1.2" data-scroll-call="fadeInRight">
-                <p>Let's connect and discuss your next project.</p>
-                <p>Open to collaboration and exciting opportunities in the world of web development.</p>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 CieloDesign. Creato con <i class="fas fa-heart"></i> da Marco Designer</p>
             </div>
         </div>
-    </section>
+    </footer>
 
-    <!-- Top Left - HOME -->
-    <nav class="nav-item corner-tl">
-        <a href="#" class="nav-link" onclick="scrollToSection('hero')">
-            <span class="font-luxurious">H</span>
-            <span class="font-pixelify">o</span>
-            <span class="font-instrument">m</span>
-            <span class="font-luxurious">e</span>
-        </a>
-    </nav>
-    
-    <!-- Top Right - ABOUT -->
-    <nav class="nav-item corner-tr">
-        <a href="#about" class="nav-link" onclick="scrollToSection('about')">
-            <span class="font-luxurious about-a">A</span>
-            <span class="font-pixelify">b</span>
-            <span class="font-instrument">o</span>
-            <span class="font-pixelify">u</span>
-            <span class="font-instrument">t</span>
-        </a>
-    </nav>
-    
-    <!-- Bottom Left - PORTFOLIO -->
-    <nav class="nav-item corner-bl">
-        <a href="#portfolio" class="nav-link" onclick="scrollToSection('portfolio')">
-            <span class="font-luxurious">P</span>
-            <span class="font-instrument">o</span>
-            <span class="font-instrument">r</span>
-            <span class="font-pixelify">t</span>
-            <span class="font-instrument">f</span>
-            <span class="font-luxurious">o</span>
-            <span class="font-instrument">l</span>
-            <span class="font-pixelify">i</span>
-            <span class="font-pixelify">o</span>
-        </a>
-    </nav>
-    
-    <!-- Bottom Right - CONTACT -->
-    <nav class="nav-item corner-br">
-        <a href="#contact" class="nav-link" onclick="scrollToSection('contact')">
-            <span class="font-luxurious">C</span>
-            <span class="font-pixelify">o</span>
-            <span class="font-instrument">n</span>
-            <span class="font-instrument">t</span>
-            <span class="font-pixelify">a</span>
-            <span class="font-instrument">c</span>
-            <span class="font-instrument">t</span>
-        </a>
-    </nav>
-    <div class="hero-content">
-    </div>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
-            }
-        }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.4/dist/locomotive-scroll.min.js"></script>
-    <script src="assets/js/locomotive.js"></script>
-    <script src="assets/js/stars.js?v=2"></script>
-    <script type="module" src="assets/js/main.js?v=20241227"></script>
-    <script type="module" src="assets/js/underwater-overlay.js"></script>
-    <script type="module" src="assets/js/noise-overlay.js"></script>
-    
-    <script>
-        // Smooth scrolling function nativo
-        function scrollToSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            if (section) {
-                section.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-    </script>
+    <script src="assets/js/main.js"></script>
 </body>
 </html>
+

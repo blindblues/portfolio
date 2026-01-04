@@ -1,1139 +1,483 @@
-import * as THREE from 'three';
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+// Modello 3D Buddha
+let scene, camera, renderer, buddha;
+let scrollY = 0;
+let maxScrollY = 0;
 
-// Variabili globali
-let scene, camera, renderer, model, mouseX = 0, mouseY = 0;
-let isInteracting = false;
-let lastFrameTime = 0;
-let frameCount = 0;
-let fps = 60;
-let lastRenderTime = 0;
-const TARGET_FPS = 60; // Limita a 60 FPS per performance
-const FRAME_INTERVAL = 1000 / TARGET_FPS;
-let shaderMaterials = []; // Array per tenere traccia degli shader materials
-let isTransitioning = false; // Flag per animazione di transizione
-let transitionStartTime = 0;
-const TRANSITION_DURATION = 6000; // 3 secondi per movimento lento del logo
+function initBuddha() {
+    const container = document.getElementById('buddha-container');
+    if (!container) return;
 
-// Variabili per gestione touch
-let touchStartTime = 0;
-let touchStartX = 0;
-let touchStartY = 0;
-let hasMoved = false;
-const TAP_THRESHOLD = 10; // Pixel massimi per considerare un tap
-const TAP_TIME_THRESHOLD = 200; // Millisecondi massimi per considerare un tap
-
-// Variabili per touch scrolling
-let touchStartScrollY = 0;
-let touchStartScrollX = 0;
-let isScrolling = false;
-const SWIPE_THRESHOLD = 50; // Pixel minimi per considerare uno swipe
-const SCROLL_SENSITIVITY = 1.2; // Sensibilità dello scroll touch
-
-// Variabili per animazione idle
-let idleTimer = 0;
-let idleTargetRotationX = 0;
-let idleTargetRotationY = 0;
-let idleTargetRotationZ = 0;
-let idleCurrentRotationX = 0;
-let idleCurrentRotationY = 0;
-let idleCurrentRotationZ = 0;
-let lastInteractionTime = 0;
-const IDLE_DELAY = 3000; // 3 secondi prima che inizi l'animazione idle
-const IDLE_ROTATION_SPEED = 0.008; // Velocità più rapida della rotazione idle
-let nextIdleChange = 0;
-const IDLE_CHANGE_INTERVAL = 3000; // Cambia direzione ogni 3 secondi (più frequente)
-let returnToCenterTime = 0;
-const RETURN_TO_CENTER_INTERVAL = 6000; // Torna al centro ogni 6 secondi (più frequente)
-
-// Inizializzazione
-function init() {
-    // Scena premium con background scuro stellato
+    // Scene setup
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x020812); // Blu scuro quasi nero
     
-    // Camera
-    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 5);
+    // Camera setup - use full hero section dimensions
+    const heroSection = document.querySelector('.hero');
+    const width = heroSection.offsetWidth;
+    const height = heroSection.offsetHeight;
+    camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+    camera.position.z = 5;
+
+    // Renderer setup
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(width, height);
+    renderer.setClearColor(0x000000, 0);
     
-    // Renderer
-    const canvas = document.getElementById('canvas3d');
-    renderer = new THREE.WebGLRenderer({ 
-        canvas: canvas,
-        antialias: true,
-        alpha: true 
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Canvas fills the entire container
+    const canvas = renderer.domElement;
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
     
-    // Configurazione renderer per depth buffer corretto
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.shadowMap.bias = -0.0001;
-    renderer.toneMapping = THREE.NoToneMapping;
-    renderer.toneMappingExposure = 1.0;
-    renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-    renderer.sortObjects = false; // Disabilita sorting per performance
-    renderer.autoClear = true;
-    renderer.autoClearColor = true;
-    renderer.autoClearDepth = true;
-    renderer.autoClearStencil = true;
-    
-    // Background trasparente per mostrare lo sfondo del sito
-    scene.background = null;
-    scene.environment = null;
-    
-    // Illuminazione premium futuristica
-    // Luce ambientale aumentata per caustiche visibili
-    const ambientLight = new THREE.AmbientLight(0x112244, 0.08); // Aumentato da 0.02 a 0.08
+    container.appendChild(canvas);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(ambientLight);
-    
-    // Luce principale morbida laterale per volume e curvatura
-    const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    keyLight.position.set(5, 3, 8);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.width = 2048;
-    keyLight.shadow.mapSize.height = 2048;
-    keyLight.shadow.camera.near = 0.5;
-    keyLight.shadow.camera.far = 30;
-    keyLight.shadow.camera.left = -5;
-    keyLight.shadow.camera.right = 5;
-    keyLight.shadow.camera.top = 5;
-    keyLight.shadow.camera.bottom = -5;
-    keyLight.shadow.bias = -0.0001;
-    scene.add(keyLight);
-    
-    // Rim light blu intensa per bordi neon
-    const rimLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    rimLight.position.set(-8, 2, -6);
-    rimLight.castShadow = false; // Nessuna ombra per effetto puro
-    scene.add(rimLight);
-    
-    // Carica modello 3D
-    loadModel();
-    
-    // Event listener per il mouse e touch
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
+
+    const directionalLight2 = new THREE.DirectionalLight(0x87CEEB, 1);
+    directionalLight2.position.set(-5, -5, -5);
+    scene.add(directionalLight2);
+
+    // Load Buddha model
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+        'assets/models/buddha/source/model.glb',
+        function (gltf) {
+            buddha = gltf.scene;
+            
+            // Create a group to control the model
+            const buddhaGroup = new THREE.Group();
+            buddhaGroup.add(buddha);
+            
+            // Center and scale the model within the group
+            const box = new THREE.Box3().setFromObject(buddha);
+            const center = box.getCenter(new THREE.Vector3());
+            buddha.position.sub(center);
+            
+            const size = box.getSize(new THREE.Vector3());
+            const isMobile = window.innerWidth <= 768;
+            const scale = isMobile ? 2 / size.x : 6 / size.x; 
+            buddha.scale.multiplyScalar(scale);
+            
+            // Reset all rotations
+            buddha.rotation.set(0, 0, 0);
+            
+            // Posiziona il modello al centro della viewport (metà altezza)
+            buddha.position.y = isMobile ? -0.5 : -0.1; // Posizioni diverse per mobile e desktop
+            
+            // Add group to scene instead of direct model
+            scene.add(buddhaGroup);
+            
+            // Replace buddha reference with the group
+            buddha = buddhaGroup;
+        },
+        function (xhr) {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        function (error) {
+            console.error('An error happened', error);
+        }
+    );
+
+    // Mouse move listener for rotation
     document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseenter', onMouseEnter);
-    document.addEventListener('mouseleave', onMouseLeave);
-    document.addEventListener('touchstart', onTouchStart, { passive: true });
-    document.addEventListener('touchmove', onTouchMove, { passive: true });
-    document.addEventListener('touchend', onTouchEnd, { passive: true });
-    document.addEventListener('touchcancel', onTouchCancel, { passive: true });
-    window.addEventListener('resize', onWindowResize);
+    
+    // Scroll listener
     window.addEventListener('scroll', onScroll);
     
-    // Event listener per i click sui link di navigazione
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', handleNavigationClick);
-    });
-    
-    // Applica il font Parisienne alle prime lettere - DISABILITATO per mantenere le classi dei font
-    // applyParisienneFirstLetter();
-    
-    // Ottimizzazione: riduci FPS quando non in uso
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            isInteracting = false;
-        } else {
-            isInteracting = true;
-        }
-    });
-    
-    // Avvia animazione
+    // Animation loop
     animate();
 }
 
-// Caricamento modello 3D
-async function loadModel() {
-    const loader = new OBJLoader();
-    
-    try {
-        // Carica il file OBJ locale
-        const object = await loader.loadAsync('assets/models/ExtrudedLogo.obj');
-        console.log('Modello OBJ caricato con successo'); // Debug
-        
-        // Shader personalizzato semplificato per mobile
-        let vertexShader, fragmentShader;
-        
-        if (window.innerWidth <= 768) {
-            // Versione semplificata per mobile
-            vertexShader = `
-                precision highp float;
-                precision highp int;
-                
-                varying vec3 vNormal;
-                varying vec3 vPosition;
-                
-                void main() {
-                    vNormal = normalize(normalMatrix * normal);
-                    vPosition = position;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `;
-            
-            fragmentShader = `
-                uniform vec3 uColor;
-                uniform vec3 uGlowColor;
-                uniform float uTime;
-                uniform vec3 uAmbientColor;
-                
-                varying vec3 vNormal;
-                varying vec3 vPosition;
-                
-                void main() {
-                    vec3 normal = normalize(vNormal);
-                    
-                    // FORZA IL COLORE BIANCO - ignora completamente uColor
-                    vec3 forcedColor = vec3(1.0, 1.0, 1.0); // Bianco puro RGB
-                    vec3 forcedGlowColor = vec3(1.0, 1.0, 1.0); // Bianco puro
-                    vec3 forcedAmbientColor = vec3(0.53, 0.53, 0.53); // Grigio chiaro
-                    
-                    // Lighting base con colori forzati
-                    float NdotL = max(dot(normal, vec3(1.0, 1.0, 1.0)), 0.0);
-                    vec3 diffuse = forcedColor * NdotL * 0.8;
-                    vec3 ambient = forcedAmbientColor * 0.4;
-                    
-                    // Glow migliorato sui bordi
-                    float fresnel = 1.0 - dot(normal, vec3(0.0, 0.0, 1.0));
-                    vec3 glow = forcedGlowColor * pow(fresnel, 2.0) * 1.2; // Aumentato ancora
-                    
-                    // Pulsazione semplice
-                    float pulse = sin(uTime * 0.3) * 0.1 + 0.9;
-                    
-                    vec3 finalColor = (diffuse + ambient + glow) * pulse;
-                    gl_FragColor = vec4(finalColor, 1.0);
-                }
-            `;
-        } else {
-            // Versione completa per desktop
-            vertexShader = `
-                precision highp float;
-                precision highp int;
-                
-                varying vec3 vNormal;
-                varying vec3 vPosition;
-                varying vec3 vViewPosition;
-                varying vec2 vUv;
-                
-                void main() {
-                    vNormal = normalize(normalMatrix * normal);
-                    vPosition = position;
-                    vUv = uv;
-                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                    vViewPosition = -mvPosition.xyz;
-                    gl_Position = projectionMatrix * mvPosition;
-                }
-            `;
-            
-            fragmentShader = `
-                precision highp float;
-                precision highp int;
-                
-                uniform vec3 uColor;
-                uniform vec3 uGlowColor;
-                uniform float uTime;
-                uniform float uIntensity;
-                uniform vec3 uLightDirection;
-                uniform vec3 uAmbientColor;
-                
-                varying vec3 vNormal;
-                varying vec3 vPosition;
-                varying vec3 vViewPosition;
-                varying vec2 vUv;
-                
-                // Funzione per caustiche lente e fluide
-                float causticPattern(vec2 uv, float time) {
-                    vec2 p = uv * 3.0;
-                    float pattern = 0.0;
-                    
-                    // Movimento lento e ondulato delle caustiche
-                    for(float i = 0.0; i < 3.0; i++) {
-                        vec2 q = p + i * vec2(0.5, 0.3);
-                        float wave1 = sin(q.x * 0.8 + time * 0.3) * cos(q.y * 0.6 + time * 0.2);
-                        float wave2 = sin(q.x * 1.2 - time * 0.25) * cos(q.y * 0.9 + time * 0.35);
-                        pattern += (wave1 + wave2) * 0.1 / (i + 1.0);
-                    }
-                    
-                    return pattern * 0.4 + 0.5;
-                }
-                
-                void main() {
-                    vec3 normal = normalize(vNormal);
-                    vec3 viewDir = normalize(vViewPosition);
-                    vec3 lightDir = normalize(uLightDirection);
-                    
-                    // Fresnel effect delicato
-                    float fresnel = 1.0 - dot(normal, viewDir);
-                    fresnel = pow(fresnel, 2.0);
-                    
-                    // Lighting base
-                    float NdotL = max(dot(normal, lightDir), 0.0);
-                    vec3 diffuse = uColor * NdotL * 0.6;
-                    vec3 ambient = uAmbientColor * 0.4;
-                    
-                    // Specular highlight morbido
-                    vec3 reflectDir = reflect(-lightDir, normal);
-                    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-                    vec3 specular = vec3(1.0, 0.95, 0.9) * spec * 0.4;
-                    
-                    // Caustiche lente basate su UV e posizione
-                    vec2 uv = vUv + vPosition.xy * 0.05;
-                    float caustic = causticPattern(uv, uTime * 0.2);
-                    
-                    // Pulsazione molto lenta e sottile
-                    float pulse = sin(uTime * 0.5) * 0.15 + 0.85;
-                    float intensity = uIntensity * pulse;
-                    
-                    // Effetto caustico principale con movimento lento
-                    vec3 causticColor = mix(uGlowColor, vec3(1.0, 0.98, 0.95), caustic * 0.3);
-                    vec3 causticEffect = causticColor * (fresnel * 0.3 + caustic * 0.6) * intensity * 1.5;
-                    
-                    // Glow delicato sui bordi
-                    vec3 glow = uGlowColor * fresnel * intensity * 0.8;
-                    
-                    // Combina tutto con emphasis sulle caustiche lente
-                    vec3 finalColor = ambient + diffuse + specular + causticEffect + glow;
-                    
-                    // Alpha trasparente solo sui bordi molto estremi
-                    float alpha = 1.0;
-                    if (fresnel > 0.85) {
-                        alpha = mix(1.0, 0.8, (fresnel - 0.85) / 0.15);
-                    }
-                    
-                    gl_FragColor = vec4(finalColor, alpha);
-                }
-            `;
-        }
-
-        const shaderMaterial = new THREE.ShaderMaterial({
-            uniforms: {
-                uColor: { value: new THREE.Color(0xffffff) }, // Sempre bianco
-                uGlowColor: { value: new THREE.Color(0xffffff) }, // Glow bianco come le scritte
-                uTime: { value: 0 },
-                uIntensity: { value: 2.0 }, // Più intensità
-                uLightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-                uAmbientColor: { value: new THREE.Color(0x888888) } // Sempre grigio chiaro
-            },
-            vertexShader: vertexShader,
-            fragmentShader: fragmentShader,
-            transparent: true,
-            side: THREE.DoubleSide
-        });
-        
-        // Rimuovi tutti i materiali esistenti dal modello OBJ
-        object.traverse(function(child) {
-            if (child instanceof THREE.Mesh) {
-                // Rimuovi materiali esistenti e texture
-                if (child.material) {
-                    if (Array.isArray(child.material)) {
-                        child.material.forEach(mat => {
-                            if (mat.map) mat.map.dispose();
-                            if (mat.normalMap) mat.normalMap.dispose();
-                            mat.dispose();
-                        });
-                    } else {
-                        if (child.material.map) child.material.map.dispose();
-                        if (child.material.normalMap) child.material.normalMap.dispose();
-                        child.material.dispose();
-                    }
-                }
-                // Applica il nuovo shader material
-                child.material = shaderMaterial;
-                child.castShadow = false;
-                shaderMaterials.push(shaderMaterial); // Aggiungi all'array
-            }
-        });
-        
-        model = object;
-        
-        // Scala del modello responsive basata su vw e vh
-        updateModelScale();
-        
-        // Calcola bounding box per centrare il modello
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        model.position.sub(center);
-        
-        // Posiziona il modello usando la funzione centralizzata
-        updateModelPosition();
-        
-        scene.add(model);
-        console.log('Modello aggiunto alla scena'); // Debug
-        
-        // Assicura che il colore sia sempre bianco all'inizializzazione
-        updateModelColor();
-        
-    } catch (error) {
-        console.error('Errore nel caricamento del modello:', error);
-        
-        // Fallback: crea un modello geometrico semplice
-        function createFallbackModel() {
-            const geometry = new THREE.TorusKnotGeometry(1, 0.3, 100, 16);
-            
-            // Shader personalizzato semplificato per mobile fallback
-            let vertexShader, fragmentShader;
-            
-            if (window.innerWidth <= 768) {
-                // Versione semplificata per mobile
-                vertexShader = `
-                    precision highp float;
-                    precision highp int;
-                    
-                    varying vec3 vNormal;
-                    varying vec3 vPosition;
-                    
-                    void main() {
-                        vNormal = normalize(normalMatrix * normal);
-                        vPosition = position;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `;
-                
-                fragmentShader = `
-                    precision highp float;
-                    precision highp int;
-                    
-                    uniform vec3 uColor;
-                    uniform vec3 uGlowColor;
-                    uniform float uTime;
-                    uniform vec3 uAmbientColor;
-                    
-                    varying vec3 vNormal;
-                    varying vec3 vPosition;
-                    
-                    void main() {
-                        vec3 normal = normalize(vNormal);
-                        
-                        // FORZA IL COLORE BIANCO - ignora completamente uColor
-                        vec3 forcedColor = vec3(1.0, 1.0, 1.0); // Bianco puro RGB
-                        vec3 forcedGlowColor = vec3(1.0, 1.0, 1.0); // Bianco puro
-                        vec3 forcedAmbientColor = vec3(0.53, 0.53, 0.53); // Grigio chiaro
-                        
-                        // Lighting base con colori forzati
-                        float NdotL = max(dot(normal, vec3(1.0, 1.0, 1.0)), 0.0);
-                        vec3 diffuse = forcedColor * NdotL * 0.8;
-                        vec3 ambient = forcedAmbientColor * 0.4;
-                        
-                        // Glow migliorato sui bordi
-                        float fresnel = 1.0 - dot(normal, vec3(0.0, 0.0, 1.0));
-                        vec3 glow = forcedGlowColor * pow(fresnel, 2.0) * 1.2; // Aumentato ancora
-                        
-                        // Pulsazione semplice
-                        float pulse = sin(uTime * 0.3) * 0.1 + 0.9;
-                        
-                        vec3 finalColor = (diffuse + ambient + glow) * pulse;
-                        gl_FragColor = vec4(finalColor, 1.0);
-                    }
-                `;
-            } else {
-                // Versione completa per desktop
-                vertexShader = `
-                    precision highp float;
-                    precision highp int;
-                    
-                    varying vec3 vNormal;
-                    varying vec3 vPosition;
-                    varying vec3 vViewPosition;
-                    varying vec2 vUv;
-                    
-                    void main() {
-                        vNormal = normalize(normalMatrix * normal);
-                        vPosition = position;
-                        vUv = uv;
-                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                        vViewPosition = -mvPosition.xyz;
-                        gl_Position = projectionMatrix * mvPosition;
-                    }
-                `;
-                
-                fragmentShader = `
-                    uniform vec3 uColor;
-                    uniform vec3 uGlowColor;
-                    uniform float uTime;
-                    uniform float uIntensity;
-                    uniform vec3 uLightDirection;
-                    uniform vec3 uAmbientColor;
-                    
-                    varying vec3 vNormal;
-                    varying vec3 vPosition;
-                    varying vec3 vViewPosition;
-                    varying vec2 vUv;
-                    
-                    // Funzione per caustiche lente e fluide
-                    float causticPattern(vec2 uv, float time) {
-                        vec2 p = uv * 2.5;
-                        float pattern = 0.0;
-                        
-                        for(float i = 0.0; i < 2.0; i++) {
-                            vec2 q = p + i * vec2(0.4, 0.3);
-                            float wave1 = sin(q.x * 0.7 + time * 0.25) * cos(q.y * 0.5 + time * 0.2);
-                            float wave2 = sin(q.x * 1.0 - time * 0.3) * cos(q.y * 0.8 + time * 0.25);
-                            pattern += (wave1 + wave2) * 0.12 / (i + 1.0);
-                        }
-                        
-                        return pattern * 0.35 + 0.5;
-                    }
-                    
-                    void main() {
-                        vec3 normal = normalize(vNormal);
-                        vec3 viewDir = normalize(vViewPosition);
-                        vec3 lightDir = normalize(uLightDirection);
-                        
-                        // Fresnel effect delicato
-                        float fresnel = 1.0 - dot(normal, viewDir);
-                        fresnel = pow(fresnel, 1.8);
-                        
-                        // Lighting base
-                        float NdotL = max(dot(normal, lightDir), 0.0);
-                        vec3 diffuse = uColor * NdotL * 0.5;
-                        vec3 ambient = uAmbientColor * 0.3;
-                        
-                        // Specular highlight morbido
-                        vec3 reflectDir = reflect(-lightDir, normal);
-                        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 28.0);
-                        vec3 specular = vec3(0.9, 0.95, 1.0) * spec * 0.3;
-                        
-                        // Caustiche lente
-                        vec2 uv = vUv + vPosition.xy * 0.03;
-                        float caustic = causticPattern(uv, uTime * 0.15);
-                        
-                        // Pulsazione lenta
-                        float pulse = sin(uTime * 0.4) * 0.1 + 0.9;
-                        float intensity = uIntensity * pulse;
-                        
-                        // Effetto caustico
-                        vec3 causticColor = mix(uGlowColor, vec3(1.0, 0.98, 0.95), caustic * 0.4);
-                        vec3 causticEffect = causticColor * (fresnel * 0.2 + caustic * 0.5) * intensity * 1.2;
-                        
-                        // Glow delicato
-                        vec3 glow = uGlowColor * fresnel * intensity * 0.6;
-                        
-                        // Combina tutto
-                        vec3 finalColor = ambient + diffuse + specular + causticEffect + glow;
-                        
-                        // Alpha trasparente solo sui bordi
-                        float alpha = 1.0;
-                        if (fresnel > 0.8) {
-                            alpha = mix(1.0, 0.7, (fresnel - 0.8) / 0.2);
-                        }
-                        
-                        gl_FragColor = vec4(finalColor, alpha);
-                    }
-                `;
-            }
-            
-            const shaderMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    uColor: { value: new THREE.Color(0xffffff) }, // Sempre bianco
-                    uGlowColor: { value: new THREE.Color(0xffffff) }, // Glow bianco come le scritte
-                    uTime: { value: 0 },
-                    uIntensity: { value: 2.0 }, // Più intensità
-                    uLightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-                    uAmbientColor: { value: new THREE.Color(0x888888) } // Sempre grigio chiaro
-                },
-                vertexShader: vertexShader,
-                fragmentShader: fragmentShader,
-                transparent: true,
-                side: THREE.DoubleSide
-            });
-            
-            model = new THREE.Mesh(geometry, shaderMaterial);
-            updateModelScale(); // Applica la scala responsive
-            model.castShadow = false;
-            model.receiveShadow = false;
-            
-            // Posiziona il modello fallback usando la funzione centralizzata
-            updateModelPosition();
-            
-            shaderMaterials.push(shaderMaterial); // Aggiungi all'array
-            scene.add(model);
-            console.log('Modello fallback creato con shader personalizzato'); // Debug
-            
-            // Assicura che il colore sia sempre bianco all'inizializzazione
-            updateModelColor();
-        }
-        createFallbackModel();
-    }
-}
-
-// Crea cerchio luminoso trasparente dietro il logo
-function createGlowCircle() {
-    const geometry = new THREE.RingGeometry(2.5, 3.0, 64);
-    const material = new THREE.MeshBasicMaterial({ 
-        color: 0xffffff, // Bianco come le scritte
-        transparent: true,
-        opacity: 0.15, // Molto trasparente per effetto glow delicato
-        side: THREE.DoubleSide
-    });
-    const glowCircle = new THREE.Mesh(geometry, material);
-    glowCircle.position.set(0, 0, -2); // Dietro il logo
-    scene.add(glowCircle);
-    
-    // Aggiungi un secondo cerchio più grande per glow più diffuso
-    const geometry2 = new THREE.RingGeometry(3.2, 3.8, 64);
-    const material2 = new THREE.MeshBasicMaterial({ 
-        color: 0xffffff, // Bianco come le scritte
-        transparent: true,
-        opacity: 0.08, // Ancora più trasparente
-        side: THREE.DoubleSide
-    });
-    const glowCircle2 = new THREE.Mesh(geometry2, material2);
-    glowCircle2.position.set(0, 0, -2.5);
-    scene.add(glowCircle2);
-}
-
-// Gestione movimento mouse
 function onMouseMove(event) {
-    isInteracting = true;
-    lastInteractionTime = performance.now(); // Registra il tempo dell'ultima interazione
-    
-    // Check if we're in the hero section
-    const heroSection = document.getElementById('hero');
-    if (heroSection) {
-        const heroRect = heroSection.getBoundingClientRect();
-        
-        // Only respond to mouse movement when hero section is visible
-        if (heroRect.bottom > 0 && heroRect.top < window.innerHeight) {
-            // Calcola la posizione del circle-border all'interno della sezione hero-bottom
-            const circleBorder = document.querySelector('.circle-border');
-            const heroBottom = document.querySelector('.hero-bottom');
-            if (circleBorder && heroBottom) {
-                // Ottieni le coordinate della sezione hero-bottom
-                const heroBottomRect = heroBottom.getBoundingClientRect();
-                // Ottieni le coordinate del circle-border
-                const circleBorderRect = circleBorder.getBoundingClientRect();
-                
-                // Calcola il centro del circle-border relativo alla finestra
-                const centerX = circleBorderRect.left + circleBorderRect.width / 2;
-                const centerY = circleBorderRect.top + circleBorderRect.height / 2;
-                
-                // Calcola il delta rispetto alla posizione del circle-border
-                mouseX = ((event.clientX - centerX) / window.innerWidth) * 2;
-                mouseY = -((event.clientY - centerY) / window.innerHeight) * 2;
-                
-                // Limita i valori per evitare movimenti eccessivi
-                mouseX = Math.max(-2, Math.min(2, mouseX));
-                mouseY = Math.max(-2, Math.min(2, mouseY));
-                
-                // Restore full intensity when interacting
-                if (shaderMaterials.length > 0) {
-                    shaderMaterials.forEach(material => {
-                        if (material.uniforms.uIntensity) {
-                            material.uniforms.uIntensity.value = 2.0;
-                        }
-                    });
-                }
-            } else {
-                // Fallback: usa il centro della finestra
-                mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-                mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
-            }
-        }
-    }
+    mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+    mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
 }
 
-// Gestione eventi touch
-function onTouchStart(event) {
+function onScroll() {
+    scrollY = window.pageYOffset;
     
-    // Registra il tempo e la posizione iniziale del touch
-    touchStartTime = performance.now();
-    touchStartX = event.touches[0].clientX;
-    touchStartY = event.touches[0].clientY;
-    hasMoved = false;
-    
-    // Registra posizione per scroll
-    touchStartScrollY = window.scrollY;
-    touchStartScrollX = window.scrollX;
-    isScrolling = false;
-    
-    isInteracting = true;
-    lastInteractionTime = performance.now();
-    
-    const touch = event.touches[0];
-    updateTouchPosition(touch);
+    // Calculate max scroll height (document height - viewport height)
+    const documentHeight = document.documentElement.scrollHeight;
+    const viewportHeight = window.innerHeight;
+    maxScrollY = documentHeight - viewportHeight;
 }
 
-function onTouchMove(event) {
-    if (event.touches.length > 0) {
-        const touch = event.touches[0];
-        const deltaX = Math.abs(touch.clientX - touchStartX);
-        const deltaY = Math.abs(touch.clientY - touchStartY);
-        
-        if (deltaX > TAP_THRESHOLD || deltaY > TAP_THRESHOLD) {
-            hasMoved = true;
-        }
-        
-        // Check se è un movimento verticale significativo (scroll gesture)
-        if (deltaY > SWIPE_THRESHOLD && !isScrolling) {
-            isScrolling = true;
-            
-            // Calcola la direzione e la velocità dello scroll
-            const scrollDeltaY = (touchStartY - touch.clientY) * SCROLL_SENSITIVITY;
-            const currentScrollY = window.scrollY;
-            const targetScrollY = touchStartScrollY + scrollDeltaY;
-            
-            // Applica lo scroll smooth
-            window.scrollTo({
-                top: targetScrollY,
-                behavior: 'auto' // Usa 'auto' per reattività immediata
-            });
-        }
-        
-        lastInteractionTime = performance.now();
-        
-        // SEMPRE aggiorna la posizione 3D mentre il touch è attivo, anche durante lo scroll
-        updateTouchPosition(touch);
-    }
-}
-
-function onTouchEnd(event) {
-    const touchEndTime = performance.now();
-    const touchDuration = touchEndTime - touchStartTime;
-    
-    // Resetta sempre le variabili di scrolling
-    isScrolling = false;
-    isInteracting = false;
-    
-    // SEMPRE anima il ritorno alla posizione centrale quando il touch termina
-    const resetAnimation = () => {
-        mouseX += (0 - mouseX) * 0.08; // Stessa velocità del mouse leave per consistenza
-        mouseY += (0 - mouseY) * 0.08;
-        
-        if (Math.abs(mouseX) > 0.005 || Math.abs(mouseY) > 0.005) {
-            requestAnimationFrame(resetAnimation);
-        } else {
-            mouseX = 0;
-            mouseY = 0;
-        }
-    };
-    resetAnimation();
-    
-    // Resetta le variabili del touch
-    hasMoved = false;
-}
-
-// Funzione helper per aggiornare la posizione del touch
-function updateTouchPosition(touch) {
-    // Calcola la posizione del circle-border all'interno della sezione hero-bottom
-    const circleBorder = document.querySelector('.circle-border');
-    const heroBottom = document.querySelector('.hero-bottom');
-    if (circleBorder && heroBottom) {
-        // Ottieni le coordinate della sezione hero-bottom
-        const heroBottomRect = heroBottom.getBoundingClientRect();
-        // Ottieni le coordinate del circle-border
-        const circleBorderRect = circleBorder.getBoundingClientRect();
-        
-        // Calcola il centro del circle-border relativo alla finestra
-        const centerX = circleBorderRect.left + circleBorderRect.width / 2;
-        const centerY = circleBorderRect.top + circleBorderRect.height / 2;
-        
-        // Calcola il delta rispetto alla posizione del circle-border
-        mouseX = ((touch.clientX - centerX) / window.innerWidth) * 2;
-        mouseY = -((touch.clientY - centerY) / window.innerHeight) * 2;
-        
-        // Limita i valori per evitare movimenti eccessivi
-        mouseX = Math.max(-2, Math.min(2, mouseX));
-        mouseY = Math.max(-2, Math.min(2, mouseY));
-    } else {
-        // Fallback: usa il centro della finestra
-        mouseX = (touch.clientX / window.innerWidth) * 2 - 1;
-        mouseY = -(touch.clientY / window.innerHeight) * 2 + 1;
-    }
-}
-
-// Gestione mouse enter
-function onMouseEnter(event) {
-    isInteracting = true;
-    lastInteractionTime = performance.now();
-}
-
-// Gestione mouse leave (quando il cursore esce dalla finestra)
-function onMouseLeave(event) {
-    isInteracting = false;
-    // Inizia il countdown per l'animazione idle
-    lastInteractionTime = performance.now();
-    
-    // Anima gradualmente il ritorno al centro invece di resettare immediatamente
-    const resetAnimation = () => {
-        mouseX += (0 - mouseX) * 0.08; // Animazione più lenta e fluida
-        mouseY += (0 - mouseY) * 0.08;
-        
-        if (Math.abs(mouseX) > 0.005 || Math.abs(mouseY) > 0.005) {
-            requestAnimationFrame(resetAnimation);
-        } else {
-            mouseX = 0;
-            mouseY = 0;
-        }
-    };
-    resetAnimation();
-}
-
-// Gestione touch cancel (quando il touch viene interrotto)
-function onTouchCancel(event) {
-    isInteracting = false;
-    // Resetta le posizioni del touch al centro
-    mouseX = 0;
-    mouseY = 0;
-    // Resetta le variabili del touch
-    hasMoved = false;
-    // Inizia il countdown per l'animazione idle
-    lastInteractionTime = performance.now();
-}
-
-// Gestione click sulla navigazione
-function handleNavigationClick(event) {
-    event.preventDefault();
-    
-    // Salva la destinazione
-    const targetHref = event.target.getAttribute('href');
-    
-    // Esegui immediatamente la navigazione senza animazioni
-    // Check if it's an anchor link (same page navigation)
-    if (targetHref.startsWith('#')) {
-        // Smooth scroll to the section
-        const targetElement = document.querySelector(targetHref);
-        if (targetElement) {
-            targetElement.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            // If section doesn't exist, redirect to appropriate page
-            const currentPath = window.location.pathname;
-            const basePath = currentPath.substring(0, currentPath.lastIndexOf('/')) + '/';
-            window.location.href = basePath + targetHref.substring(1) + '.html';
-        }
-    } else {
-        // Full page navigation
-        window.location.href = targetHref;
-    }
-}
-
-// Funzione per avviare l'animazione di spegnimento del modello 3D
-function startModelPowerOff() {
-    const blackColor = new THREE.Color(0x000000); // Nero opaco
-    const powerOffDuration = 2000; // 5 secondi per spegnimento ancora più graduale
-    const startTime = performance.now();
-    
-    // Salva i valori iniziali di tutti i materiali
-    const initialStates = [];
-    shaderMaterials.forEach(material => {
-        if (material && material.uniforms) {
-            initialStates.push({
-                material: material,
-                initialColor: material.uniforms.uColor ? material.uniforms.uColor.value.clone() : new THREE.Color(0xffffff),
-                initialGlowColor: material.uniforms.uGlowColor ? material.uniforms.uGlowColor.value.clone() : new THREE.Color(0xffffff),
-                initialIntensity: material.uniforms.uIntensity ? material.uniforms.uIntensity.value : 2.0,
-                initialAmbientColor: material.uniforms.uAmbientColor ? material.uniforms.uAmbientColor.value.clone() : new THREE.Color(0x112244)
-            });
-        }
-    });
-    
-    function animateModelPowerOff() {
-        const elapsed = performance.now() - startTime;
-        const progress = Math.min(elapsed / powerOffDuration, 1);
-        
-        // Curva di easing molto lenta all'inizio (quartic ease-in per inizio estremamente graduale)
-        const easedProgress = progress < 4 
-            ? 8 * progress * progress * progress * progress  // Quartic ease-in per inizio estremamente lento
-            : 1 - Math.pow(-2 * progress + 2, 4) / 2; // Quartic ease-out
-        
-        // Applica una curva ancora più graduale per l'effetto "spegnimento"
-        const smoothProgress = Math.pow(easedProgress, 0.85); // Potenza molto inferiore per rendere l'inizio estremamente lento
-        
-        // Spegni gradualmente tutti gli effetti luminosi
-        initialStates.forEach(state => {
-            if (state.material && state.material.uniforms) {
-                // MANTIENE il colore fisso durante lo spegnimento - non cambia colore
-                // state.material.uniforms.uColor.value = state.initialColor.lerp(blackColor, smoothProgress);
-                state.material.uniforms.uGlowColor.value = state.initialGlowColor.lerp(blackColor, smoothProgress);
-                state.material.uniforms.uIntensity.value = state.initialIntensity * (1 - smoothProgress); // Riduci intensità a 0
-                state.material.uniforms.uAmbientColor.value = state.initialAmbientColor.lerp(blackColor, smoothProgress);
-            }
-        });
-        
-        if (elapsed < powerOffDuration) {
-            requestAnimationFrame(animateModelPowerOff);
-        } else {
-            // Assicurati che tutto sia completamente spento alla fine
-            initialStates.forEach(state => {
-                if (state.material && state.material.uniforms) {
-                    // MANTIENE il colore fisso anche alla fine - non cambia colore
-            // state.material.uniforms.uColor.value = blackColor;
-                    state.material.uniforms.uGlowColor.value = blackColor;
-                    state.material.uniforms.uIntensity.value = 0;
-                    state.material.uniforms.uAmbientColor.value = blackColor;
-                }
-            });
-            console.log('Modello 3D completamente spento'); // Debug
-        }
-    }
-    
-    animateModelPowerOff();
-}
-
-// Animazione ottimizzata senza frame skipping
 function animate() {
     requestAnimationFrame(animate);
-    const currentTime = performance.now();
-    
-    // Rimuovi il limitatore FPS per evitare stutter - lascia che il browser gestisca
-    // if (currentTime - lastRenderTime < FRAME_INTERVAL) {
-    //     return;
-    // }
-    // lastRenderTime = currentTime;
-    
-    if (model) {
-        // Comportamento normale sempre - nessuna transizione
-        // Limita il movimento del modello alla viewport su mobile
-        let moveScaleX = 0.5;
-        let moveScaleY = 0.4;
-        let rotationScale = 0.3;
+
+    if (buddha) {
+        // Floating effect based on scroll
+        const floatY = Math.sin(Date.now() * 0.001) * 0.1 + scrollY * 0.0005;
+        buddha.position.y = floatY + 1; // Raised by 1 unit
         
-        if (window.innerWidth <= 768) {
-            moveScaleX = 0.2;  // Ridotto movimento su mobile
-            moveScaleY = 0.15;
-            rotationScale = 0.15;
-        }
-        
-        // Rotazione più reattiva al mouse + idle
-        let totalRotationY = mouseX * rotationScale;
-        let totalRotationX = -mouseY * rotationScale * 1.2; // Inverto rotazione X basata su mouseY
-        let totalRotationZ = 0;
-        
-        // Aggiungi rotazioni idle se attive
-        if (currentTime - lastInteractionTime > IDLE_DELAY && !isInteracting) {
-            totalRotationY += idleCurrentRotationY;
-            totalRotationX += idleCurrentRotationX;
-            totalRotationZ += idleCurrentRotationZ;
-        }
-        
-        model.rotation.y = totalRotationY;
-        model.rotation.x = totalRotationX;
-        model.rotation.z = totalRotationZ;
-        
-        // Movimento base limitato
-        let baseX = mouseX * moveScaleX;
-        let baseY = mouseY * moveScaleY;
-        
-        // Animazione idle quando non c'è interazione
-        const timeSinceLastInteraction = currentTime - lastInteractionTime;
-        if (timeSinceLastInteraction > IDLE_DELAY && !isInteracting) {
-            // Inizia o continua l'animazione idle
+        // Rotation based on scroll percentage
+        if (maxScrollY > 0) {
+            const scrollPercentage = scrollY / maxScrollY;
             
-            // Cambia direzione periodicamente
-            if (currentTime > nextIdleChange) {
-                idleTargetRotationX = (Math.random() - 0.5) * 0.8; // Rotazione casuale ridotta
-                idleTargetRotationY = (Math.random() - 0.5) * 0.8;
-                idleTargetRotationZ = (Math.random() - 0.5) * 0.8; // Rotazione Z ridotta
-                nextIdleChange = currentTime + IDLE_CHANGE_INTERVAL;
-            }
+            buddha.rotation.y = scrollPercentage * Math.PI * 4; // 3 rotazioni complete (1080 degrees) based on scroll percentage
             
-            // Torna al centro periodicamente
-            if (currentTime > returnToCenterTime) {
-                idleTargetRotationX = 0;
-                idleTargetRotationY = 0;
-                idleTargetRotationZ = 0; // Resetta anche Z
-                returnToCenterTime = currentTime + RETURN_TO_CENTER_INTERVAL;
-            }
+            // Scale effect based on scroll - ingrandimento più evidente
+            const scaleEffect = 1 + (scrollPercentage * 3); // Ingrandisce fino al 400%
+            buddha.scale.set(scaleEffect, scaleEffect, scaleEffect);
             
-            // Movimento fluido verso il target
-            idleCurrentRotationX += (idleTargetRotationX - idleCurrentRotationX) * IDLE_ROTATION_SPEED;
-            idleCurrentRotationY += (idleTargetRotationY - idleCurrentRotationY) * IDLE_ROTATION_SPEED;
-            idleCurrentRotationZ += (idleTargetRotationZ - idleCurrentRotationZ) * IDLE_ROTATION_SPEED; // Aggiungi movimento Z
-        } else {
-            // Resetta l'animazione idle quando c'è interazione
-            idleCurrentRotationX = 0;
-            idleCurrentRotationY = 0;
-            idleCurrentRotationZ = 0; // Resetta anche Z
-            nextIdleChange = currentTime + IDLE_CHANGE_INTERVAL;
-            returnToCenterTime = currentTime + RETURN_TO_CENTER_INTERVAL;
+            // Additional downward movement based on scroll - movimento verso il basso (inverso)
+            const moveDown = scrollPercentage * 2000; // Muove verso il basso di 1000 unità
+            buddha.position.y = floatY + 1 - moveDown; // Sottrai invece di aggiungere
+            
+            // Muovi anche la telecamera verso il basso per seguire il modello
+            camera.position.y = -moveDown * 0.99; // La telecamera si abbassa del 99% del movimento del modello
+            
+            // Reset X and Z rotation to prevent orbiting
+            buddha.rotation.x = 0;
+            buddha.rotation.z = 0;
         }
-        
-        // Model position independent from circle border - only mouse driven
-        model.position.y = -0.3 + baseY; // Lower default position + mouse movement
-        model.position.x = baseX; // Center position + mouse movement
     }
-    
-    // Aggiorna il tempo negli shader materials in modo consistente
-    const shaderTime = currentTime * 0.001; // Usa currentTime invece di Date.now()
-    shaderMaterials.forEach(material => {
-        if (material && material.uniforms && material.uniforms.uTime) {
-            material.uniforms.uTime.value = shaderTime;
-        }
-    });
-    
+
     renderer.render(scene, camera);
 }
 
-// Gestione resize finestra
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    
-    // Aggiorna la scala e la posizione del modello quando cambia la dimensione della finestra
-    if (model) {
-        updateModelScale();
-        updateModelPosition();
-        updateModelColor();
-    }
-}
+// Initialize Buddha when DOM is loaded
+document.addEventListener('DOMContentLoaded', initBuddha);
 
-// Funzione per aggiornare la scala del modello in base a vw e vh
-function updateModelScale() {
-    if (!model) return;
+// Handle window resize
+window.addEventListener('resize', () => {
+    if (camera && renderer) {
+        const heroSection = document.querySelector('.hero');
+        const width = heroSection.offsetWidth;
+        const height = heroSection.offsetHeight;
+        
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+    }
+});
+
+// Menu mobile hamburger
+const hamburger = document.querySelector('.hamburger');
+const navMenu = document.querySelector('.nav-menu');
+
+hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('active');
+    navMenu.classList.toggle('active');
+});
+
+// Chiudi menu mobile quando si clicca su un link
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+        hamburger.classList.remove('active');
+        navMenu.classList.remove('active');
+    });
+});
+
+// Navbar scroll effect - header con effetto blur quando si scorre
+window.addEventListener('scroll', () => {
+    const navbar = document.querySelector('.navbar');
+    const scrolled = window.pageYOffset;
     
-    // Calcola la scala base usando vw (viewport width) e vh (viewport height)
-    const vw = window.innerWidth / 100; // 1vw in pixel
-    const vh = window.innerHeight / 100; // 1vh in pixel
-    
-    // Scala puramente responsive basata sulle dimensioni della finestra
-    let baseScale;
-    
-    if (window.innerWidth <= 768) {
-        // Scala per mobile
-        baseScale = Math.min(vw * 0.006, vh * 0.008);
+    // Aggiungi effetto blur quando si scorre verso il basso
+    if (scrolled > 50) {
+        navbar.style.background = 'transparent';
+        navbar.style.backdropFilter = 'blur(10px)';
+        navbar.style.WebkitBackdropFilter = 'blur(10px)'; // Supporto Safari
     } else {
-        // Scala per desktop
-        baseScale = Math.min(vw * 0.007, vh * 0.005);
+        // Rimuovi effetto blur quando si è in cima
+        navbar.style.background = 'transparent';
+        navbar.style.backdropFilter = 'blur(0px)';
+        navbar.style.boxShadow = 'none';
+        navbar.style.WebkitBackdropFilter = 'blur(0px)'; // Supporto Safari
     }
     
-    // Calcola il massimo basato sulle dimensioni del circle-border
-    const circleBorder = document.querySelector('.circle-border');
-    if (circleBorder) {
-        const rect = circleBorder.getBoundingClientRect();
-        // Usa un valore massimo fisso appropriato per display 2K
-        const maxScale = 0.05; // Massimo ridotto per evitare dimensioni eccessive su 2K
-        // Usa un valore minimo per mantenere le proporzioni quando lo schermo si rimpicciolisce
-        const minScale = 0.015; // Minimo per non diventare troppo piccolo su schermi piccoli
-        
-        // Aumenta i limiti per finestre verticali strette per corrispondere al circle-border più grande (60%)
-        let adjustedMaxScale = maxScale;
-        let adjustedMinScale = minScale;
-        
-        if (window.innerHeight > window.innerWidth) { // Finestra verticale
-            adjustedMaxScale = 0.06; // Ridotto da 0.08 per corrispondere al 60% del circle-border
-            adjustedMinScale = 0.02; // Ridotto da 0.025 per corrispondere al 60% del circle-border
-        }
-        
-        console.log('Circle border dimensions:', rect.width, 'x', rect.height, 'minScale:', adjustedMinScale, 'maxScale:', adjustedMaxScale);
-        console.log('Base scale before limits:', baseScale);
-        baseScale = Math.max(adjustedMinScale, Math.min(baseScale, adjustedMaxScale));
-        console.log('Final scale after limits:', baseScale);
+    // Resetta lo stile del contenuto hero per non sfocarlo direttamente
+    const heroContent = document.querySelector('.hero-content');
+    if (heroContent) {
+        heroContent.style.filter = 'none';
+        heroContent.style.opacity = '1';
+        heroContent.style.transform = 'translateY(0)';
     }
-    
-    // Applica la scala al modello
-    model.scale.set(baseScale, baseScale, baseScale);
-    console.log('Model scale updated:', baseScale, 'screen:', window.innerWidth + 'x' + window.innerHeight);
-}
+});
 
-// Funzione per aggiornare la posizione del modello in base al circle-border
-function updateModelPosition() {
-    if (!model) return;
-    
-    // Posiziona il modello 3D nella stessa posizione del circle-border
-    const circleBorder = document.querySelector('.circle-border');
-    if (circleBorder) {
-        const rect = circleBorder.getBoundingClientRect();
-        
-        // Calcola la posizione relativa del circle-border rispetto al centro della pagina
-        const pageCenterX = window.innerWidth / 2;
-        const pageCenterY = window.innerHeight / 2;
-        const circleCenterX = rect.left + rect.width / 2;
-        const circleCenterY = rect.top + rect.height / 2;
-        
-        // Calcola l'offset dal centro della pagina
-        const offsetX = circleCenterX - pageCenterX;
-        const offsetY = circleCenterY - pageCenterY;
-        
-        // Scala puramente responsive basata sulle dimensioni della finestra
-        const scaleFactor = window.innerWidth <= 768 ? 0.0008 : 0.0015;
-        
-        model.position.x = offsetX * scaleFactor;
-        model.position.y = (-offsetY * scaleFactor) - 0.1; // Spostato più in basso di 0.1 unità
-        
-        console.log('Model position updated:', model.position.x, model.position.y, 'screen:', window.innerWidth + 'x' + window.innerHeight);
-    }
-}
+// Portfolio filter functionality
+const filterButtons = document.querySelectorAll('.filter-btn');
+const portfolioItems = document.querySelectorAll('.portfolio-item');
 
-// Gestione scrolling
-function onScroll() {
-    // Don't reset mouse position - let model continue following cursor
-    // mouseX = 0;
-    // mouseY = 0;
-    
-    // Let model scroll with its section while maintaining cursor interaction
-    if (model && !isInteracting) {
-        // Model position is handled by the animate function - it will naturally follow the circle border
-        // which scrolls with the hero section since canvas is absolute positioned
+filterButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        // Rimuovi active da tutti i bottoni
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        // Aggiungi active al bottone cliccato
+        button.classList.add('active');
         
-        // Reduce intensity when scrolled away from hero section
-        const heroSection = document.getElementById('hero');
-        if (heroSection) {
-            const heroRect = heroSection.getBoundingClientRect();
-            // Check if hero section is still in viewport
-            if (heroRect.bottom > 0 && heroRect.top < window.innerHeight) {
-                // Hero section is visible, restore full intensity
-                if (shaderMaterials.length > 0) {
-                    shaderMaterials.forEach(material => {
-                        if (material.uniforms.uIntensity) {
-                            material.uniforms.uIntensity.value = 2.0;
-                        }
-                    });
-                }
+        const filter = button.getAttribute('data-filter');
+        
+        portfolioItems.forEach(item => {
+            if (filter === 'all' || item.getAttribute('data-category') === filter) {
+                item.style.display = 'block';
+                // Aggiungi animazione fade-in
+                setTimeout(() => {
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                }, 100);
             } else {
-                // Hero section is not visible, reduce model intensity
-                if (shaderMaterials.length > 0) {
-                    shaderMaterials.forEach(material => {
-                        if (material.uniforms.uIntensity) {
-                            material.uniforms.uIntensity.value = 0.5; // Reduce intensity when scrolled away
-                        }
-                    });
-                }
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    item.style.display = 'none';
+                }, 300);
             }
-        }
-    }
-}
+        });
+    });
+});
 
-// Funzione per aggiornare il colore del modello in base alla dimensione corrente
-function updateModelColor() {
-    if (!shaderMaterials.length) return;
-
-    // MANTIENE SEMPRE il colore bianco per il modello, qualsiasi cosa accada
-    const fixedColor = new THREE.Color(0xffffff); // Bianco fisso
-    const fixedAmbientColor = new THREE.Color(0x888888); // Ambient grigio chiaro fisso
-
-    shaderMaterials.forEach(material => {
-        if (material && material.uniforms) {
-            material.uniforms.uColor.value = fixedColor; // Sempre bianco
-            material.uniforms.uAmbientColor.value = fixedAmbientColor; // Sempre grigio chiaro
+// Smooth scrolling per link interni
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
         }
     });
-    console.log('Model color maintained as white (fixed)');
+});
+
+// Animazione fade-in al scroll
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, observerOptions);
+
+// Aggiungi classe fade-in agli elementi da animare - DISABILITATO TEMPORANEAMENTE
+document.addEventListener('DOMContentLoaded', () => {
+    // Disabilitato per debug - rimuovi il commento per riattivare
+    /*
+    const elementsToAnimate = document.querySelectorAll('.about-text, .about-image, .portfolio-item, .contact-info, .contact-form');
+    elementsToAnimate.forEach(element => {
+        element.classList.add('fade-in');
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(30px)';
+        element.style.transition = 'all 0.6s ease';
+        observer.observe(element);
+    });
+    */
+});
+
+// Form di contatto
+const contactForm = document.getElementById('contactForm');
+if (contactForm) {
+    contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        // Prendi i dati dal form
+        const formData = new FormData(contactForm);
+        const name = formData.get('name');
+        const email = formData.get('email');
+        const subject = formData.get('subject');
+        const message = formData.get('message');
+        
+        // Validazione base
+        if (!name || !email || !subject || !message) {
+            showNotification('Per favore compila tutti i campi', 'error');
+            return;
+        }
+        
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showNotification('Per favore inserisci un\'email valida', 'error');
+            return;
+        }
+        
+        // Simula invio form (in un progetto reale qui ci sarebbe una chiamata API)
+        showNotification('Messaggio inviato con successo! Ti risponderò presto.', 'success');
+        contactForm.reset();
+    });
 }
 
-// Funzione per applicare il font Parisienne alle prime lettere - DISABILITATA per mantenere le classi dei font
-// function applyParisienneFirstLetter() {
-//     // Applica ai link di navigazione
-//     document.querySelectorAll('.nav-link').forEach(link => {
-//         const text = link.textContent;
-//         if (text && text.length > 0 && !link.querySelector('.first-letter')) {
-//             const firstLetter = text.charAt(0);
-//             const restOfText = text.slice(1).toLowerCase();
-//             link.innerHTML = `<span class="first-letter">${firstLetter}</span>${restOfText}`;
-//         }
-//     });
-//     
-//     // Applica ai titoli h1 e h2
-//     document.querySelectorAll('h1, h2').forEach(heading => {
-//         const text = heading.textContent;
-//         if (text && text.length > 0 && !heading.querySelector('.first-letter')) {
-//             const firstLetter = text.charAt(0);
-//             const restOfText = text.slice(1).toLowerCase();
-//             heading.innerHTML = `<span class="first-letter">${firstLetter}</span>${restOfText}`;
-//         }
-//     });
-// }
+// Sistema di notifiche
+function showNotification(message, type = 'info') {
+    // Rimuovi notifiche esistenti
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Crea nuova notifica
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    // Stili notifica
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 10px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        max-width: 300px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    `;
+    
+    // Colori base sul tipo
+    switch(type) {
+        case 'success':
+            notification.style.background = '#4CAF50';
+            break;
+        case 'error':
+            notification.style.background = '#f44336';
+            break;
+        default:
+            notification.style.background = '#4A90E2';
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Animazione entrata
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Rimuovi dopo 5 secondi
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 5000);
+}
 
-// Avvia tutto quando la pagina è caricata
-window.addEventListener('DOMContentLoaded', init);
+// Animazione typing per hero title
+function typeWriter(element, text, speed = 100) {
+    let i = 0;
+    element.textContent = '';
+    
+    function type() {
+        if (i < text.length) {
+            element.textContent += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
+        }
+    }
+    
+    type();
+}
+
+// Applica typing animation al caricamento
+window.addEventListener('load', () => {
+    const nameElement = document.querySelector('.name');
+    if (nameElement) {
+        const originalText = nameElement.textContent;
+        typeWriter(nameElement, originalText, 150);
+    }
+});
+
+// Portfolio item hover effect con mouse move
+portfolioItems.forEach(item => {
+    item.addEventListener('mousemove', (e) => {
+        const rect = item.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const rotateX = (y - centerY) / 10;
+        const rotateY = (centerX - x) / 10;
+        
+        item.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
+    });
+    
+    item.addEventListener('mouseleave', () => {
+        item.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
+    });
+});
+
+// Loading animation
+window.addEventListener('load', () => {
+    document.body.style.opacity = '0';
+    setTimeout(() => {
+        document.body.style.transition = 'opacity 0.5s ease';
+        document.body.style.opacity = '1';
+    }, 100);
+});
+
+// Active nav link based on scroll position
+window.addEventListener('scroll', () => {
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    let current = '';
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (scrollY >= (sectionTop - 200)) {
+            current = section.getAttribute('id');
+        }
+    });
+    
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href').slice(1) === current) {
+            link.classList.add('active');
+        }
+    });
+});
+
+// Easter egg: Konami code
+let konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+let konamiIndex = 0;
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === konamiCode[konamiIndex]) {
+        konamiIndex++;
+        if (konamiIndex === konamiCode.length) {
+            activateEasterEgg();
+            konamiIndex = 0;
+        }
+    } else {
+        konamiIndex = 0;
+    }
+});
+
+function activateEasterEgg() {
+    // Crea nuvole extra animate
+    const heroSection = document.querySelector('.hero');
+    for (let i = 0; i < 10; i++) {
+        const cloud = document.createElement('div');
+        cloud.className = 'cloud easter-egg-cloud';
+        cloud.style.cssText = `
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 100px;
+            width: ${Math.random() * 80 + 40}px;
+            height: ${Math.random() * 30 + 20}px;
+            top: ${Math.random() * 80}%;
+            animation: float ${Math.random() * 10 + 15}s infinite;
+            z-index: 1;
+        `;
+        heroSection.querySelector('.clouds').appendChild(cloud);
+    }
+    
+    showNotification('🌈 Hai scoperto il codice segreto! Il cielo è più sereno oggi!', 'success');
+}
