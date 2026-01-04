@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>3D Model Proxy</title>
+</head>
+<body>
+    <script>
+        // Proxy per bypassare CORS - carica il modello da R2 e lo serve come blob URL
+        async function loadModelFromR2() {
+            try {
+                const response = await fetch('https://pub-3bb0eda80e0049a99a1c007c2e323f15.r2.dev/model.glb');
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                
+                // Invia l'URL al parent window
+                window.parent.postMessage({
+                    type: 'modelLoaded',
+                    url: blobUrl
+                }, '*');
+                
+            } catch (error) {
+                console.error('Error loading model:', error);
+                window.parent.postMessage({
+                    type: 'modelError',
+                    error: error.message
+                }, '*');
+            }
+        }
+        
+        loadModelFromR2();
+    </script>
+</body>
+</html>
