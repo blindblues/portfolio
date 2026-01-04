@@ -44,7 +44,7 @@ function initBuddha() {
     directionalLight2.position.set(-5, -5, -5);
     scene.add(directionalLight2);
 
-    // Load OBJ model
+    // Load OBJ model with GitHub Pages LFS workaround
     const loader = new THREE.OBJLoader();
     
     // Show loading indicator
@@ -62,68 +62,91 @@ function initBuddha() {
         }
     }, 8000); // 8 seconds timeout for large OBJ file
     
-    // Try to load the OBJ model
-    loader.load(
-        'assets/models/buddha/source/model.obj',
-        function (object) {
-            clearTimeout(loadingTimeout);
-            buddha = object;
-            
-            // Remove loading indicator
-            loadingDiv.remove();
-            
-            // Create a group to control the model
-            const buddhaGroup = new THREE.Group();
-            buddhaGroup.add(buddha);
-            
-            // Apply default material to all meshes
-            buddha.traverse(function (child) {
-                if (child instanceof THREE.Mesh) {
-                    child.material = new THREE.MeshPhongMaterial({ 
-                        color: 0x222222,
-                        specular: 0x111111,
-                        shininess: 20
-                    });
+    // Try multiple URLs for the OBJ model (GitHub Pages LFS workaround)
+    const objUrls = [
+        'https://raw.githubusercontent.com/blindblues/portfolio/master/assets/models/buddha/source/model.obj',
+        'assets/models/buddha/source/model.obj'
+    ];
+    
+    let urlIndex = 0;
+    
+    function tryLoadOBJ() {
+        const currentUrl = objUrls[urlIndex];
+        console.log(`Trying to load OBJ from: ${currentUrl}`);
+        
+        loader.load(
+            currentUrl,
+            function (object) {
+                clearTimeout(loadingTimeout);
+                buddha = object;
+                
+                // Remove loading indicator
+                loadingDiv.remove();
+                
+                // Create a group to control the model
+                const buddhaGroup = new THREE.Group();
+                buddhaGroup.add(buddha);
+                
+                // Apply default material to all meshes
+                buddha.traverse(function (child) {
+                    if (child instanceof THREE.Mesh) {
+                        child.material = new THREE.MeshPhongMaterial({ 
+                            color: 0x222222,
+                            specular: 0x111111,
+                            shininess: 20
+                        });
+                    }
+                });
+                
+                // Center and scale the model within the group
+                const box = new THREE.Box3().setFromObject(buddha);
+                const center = box.getCenter(new THREE.Vector3());
+                buddha.position.sub(center);
+                
+                const size = box.getSize(new THREE.Vector3());
+                const isMobile = window.innerWidth <= 768;
+                const scale = isMobile ? 2 / size.x : 6 / size.x; 
+                buddha.scale.multiplyScalar(scale);
+                
+                // Reset all rotations
+                buddha.rotation.set(0, 0, 0);
+                
+                // Posiziona il modello al centro della viewport (metà altezza)
+                buddha.position.y = isMobile ? -0.5 : -0.1; // Posizioni diverse per mobile e desktop
+                
+                // Add group to scene instead of direct model
+                scene.add(buddhaGroup);
+                
+                // Replace buddha reference with the group
+                buddha = buddhaGroup;
+                
+                console.log('OBJ model loaded successfully from:', currentUrl);
+            },
+            function (xhr) {
+                if (xhr.lengthComputable) {
+                    const percentComplete = (xhr.loaded / xhr.total * 100).toFixed(1);
+                    loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Caricamento modello 3D... ${percentComplete}%`;
                 }
-            });
-            
-            // Center and scale the model within the group
-            const box = new THREE.Box3().setFromObject(buddha);
-            const center = box.getCenter(new THREE.Vector3());
-            buddha.position.sub(center);
-            
-            const size = box.getSize(new THREE.Vector3());
-            const isMobile = window.innerWidth <= 768;
-            const scale = isMobile ? 2 / size.x : 6 / size.x; 
-            buddha.scale.multiplyScalar(scale);
-            
-            // Reset all rotations
-            buddha.rotation.set(0, 0, 0);
-            
-            // Posiziona il modello al centro della viewport (metà altezza)
-            buddha.position.y = isMobile ? -0.5 : -0.1; // Posizioni diverse per mobile e desktop
-            
-            // Add group to scene instead of direct model
-            scene.add(buddhaGroup);
-            
-            // Replace buddha reference with the group
-            buddha = buddhaGroup;
-            
-            console.log('OBJ model loaded successfully');
-        },
-        function (xhr) {
-            if (xhr.lengthComputable) {
-                const percentComplete = (xhr.loaded / xhr.total * 100).toFixed(1);
-                loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Caricamento modello 3D... ${percentComplete}%`;
+            },
+            function (error) {
+                console.error(`Error loading OBJ from ${currentUrl}:`, error);
+                
+                // Try next URL or fallback
+                urlIndex++;
+                if (urlIndex < objUrls.length) {
+                    console.log('Trying next URL...');
+                    tryLoadOBJ();
+                } else {
+                    clearTimeout(loadingTimeout);
+                    loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Errore caricamento OBJ, uso fallback...';
+                    createFallbackModel();
+                }
             }
-        },
-        function (error) {
-            clearTimeout(loadingTimeout);
-            console.error('Error loading OBJ model:', error);
-            loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Errore caricamento OBJ, uso fallback...';
-            createFallbackModel();
-        }
-    );
+        );
+    }
+    
+    // Start loading
+    tryLoadOBJ();
     
     function createFallbackModel() {
         setTimeout(() => {
