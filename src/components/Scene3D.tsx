@@ -4,19 +4,25 @@ import { useGLTF, useAnimations, OrbitControls, useTexture, Float } from '@react
 import * as THREE from 'three';
 import gsap from 'gsap';
 
+const BASE_PATH = '/portfolio';
+
 function SceneSetup() {
     const { scene, camera } = useThree();
-    const texture = useTexture('/3d/environment.png');
+    const texture = useTexture(`${BASE_PATH}/3d/environment.png`);
 
     useEffect(() => {
-        // Force Equirectangular mapping for lighting
-        texture.mapping = THREE.EquirectangularReflectionMapping;
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.needsUpdate = true;
+        if (texture) {
+            // Force Equirectangular mapping for lighting
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.needsUpdate = true;
 
-        scene.environment = texture;
-        scene.background = new THREE.Color('#000000');
+            scene.environment = texture;
+            scene.background = new THREE.Color('#000000');
+        }
+    }, [texture, scene]);
 
+    useEffect(() => {
         // Camera Intro Animation
         // Start very close
         camera.position.set(0, 0, 1.5);
@@ -34,7 +40,7 @@ function SceneSetup() {
 }
 
 function Model({ url }: { url: string }) {
-    const { scene, animations } = useGLTF(url);
+    const { scene, animations } = useGLTF(`${BASE_PATH}${url}`);
     const { actions } = useAnimations(animations, scene);
 
     useEffect(() => {
