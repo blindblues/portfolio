@@ -4,7 +4,7 @@ import { useGLTF, useAnimations, OrbitControls, useTexture, Float } from '@react
 import * as THREE from 'three';
 import gsap from 'gsap';
 
-const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, "");
+const BASE_PATH = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function SceneSetup() {
     const { scene, camera } = useThree();
