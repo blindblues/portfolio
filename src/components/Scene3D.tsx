@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useGLTF, useAnimations, OrbitControls, useTexture, Float, AdaptiveDpr, Preload } from '@react-three/drei';
 import * as THREE from 'three';
@@ -67,9 +67,51 @@ function Model({ url }: { url: string }) {
     return <primitive object={scene} scale={2} position={[0, -1, 0]} />;
 }
 
+/**
+ * A small component to signal that Suspense has finished loading its children
+ */
+function LoadedTrigger({ onLoaded }: { onLoaded: () => void }) {
+    useEffect(() => {
+        onLoaded();
+    }, [onLoaded]);
+    return null;
+}
+
 export default function Scene3D() {
+    const overlayRef = useRef<HTMLDivElement>(null);
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    useEffect(() => {
+        if (isLoaded && overlayRef.current) {
+            gsap.to(overlayRef.current, {
+                opacity: 0,
+                duration: 1.2,
+                ease: "power2.out",
+                delay: 0.1,
+                onComplete: () => {
+                    if (overlayRef.current) {
+                        overlayRef.current.style.display = 'none';
+                    }
+                }
+            });
+        }
+    }, [isLoaded]);
+
     return (
         <div style={{ width: '100vw', height: '100vh', background: 'black', position: 'fixed', top: 0, left: 0, touchAction: 'none' }}>
+            <div
+                ref={overlayRef}
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'black',
+                    zIndex: 100,
+                    pointerEvents: 'none'
+                }}
+            />
             <Suspense fallback={null}>
                 <Canvas
                     flat
@@ -92,6 +134,8 @@ export default function Scene3D() {
                     <Float speed={1.5} rotationIntensity={0.4} floatIntensity={0.4}>
                         <Model url="/3d/Blowed2.glb" />
                     </Float>
+
+                    <LoadedTrigger onLoaded={() => setIsLoaded(true)} />
 
                     <OrbitControls
                         enablePan={false}
