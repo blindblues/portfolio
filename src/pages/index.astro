@@ -1,0 +1,19 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Scene3D from "../components/Scene3D.tsx";
+---
+
+<Layout title="3D Scene" description="Animated 3D Model on Black Background">
+	<main>
+		<Scene3D client:only="react" />
+	</main>
+</Layout>
+
+<style>
+	main {
+		width: 100%;
+		height: 100vh;
+		background: black;
+		overflow: hidden;
+	}
+</style>

@@ -1,0 +1,218 @@
+---
+
+---
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="gaming-text hero-title">EMANUELE<br />GRECO</h1>
+            <p class="subtitle">CREATIVE DESIGNER & DEVELOPER</p>
+            <div class="cta-group">
+                <a href="#projects" class="btn primary">PROGETTI</a>
+                <a href="#contact" class="btn secondary">CONTATTI</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Geometric Shapes -->
+    <div class="geo-shape geo-square-lg" style="top: 5%; left: 8%;"></div>
+    <div class="geo-shape geo-square-md" style="top: 15%; right: 10%;"></div>
+    <div class="geo-shape geo-square-sm" style="top: 40%; left: 5%;"></div>
+    <div class="geo-shape geo-square-sm" style="bottom: 20%; right: 15%;"></div>
+    <div class="geo-shape geo-rect-h" style="bottom: 10%; left: 15%;"></div>
+    <div class="geo-shape geo-rect-v" style="top: 50%; right: 5%;"></div>
+
+    <!-- Dotted Pattern Areas -->
+    <div class="dotted-pattern dotted-area-1"></div>
+    <div class="dotted-pattern dotted-area-2"></div>
+</section>
+
+<style>
+    .hero {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(
+            135deg,
+            var(--bg-primary) 0%,
+            var(--bg-secondary) 100%
+        );
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 10;
+        text-align: center;
+    }
+
+    .hero-title {
+        font-size: clamp(3.5rem, 12vw, 8rem);
+        line-height: 0.95;
+        margin-bottom: 1rem;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+        font-size: clamp(1rem, 2.5vw, 1.5rem);
+        color: var(--text-secondary);
+        margin-bottom: 3rem;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+    }
+
+    .cta-group {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 1.2rem 2.5rem;
+        border-radius: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: var(--transition-smooth);
+        font-size: 1rem;
+        border: 3px solid transparent;
+    }
+
+    .btn.primary {
+        background: var(--text-primary);
+        color: var(--bg-primary);
+        border-color: var(--text-primary);
+    }
+
+    .btn.primary:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
+    }
+
+    .btn.secondary {
+        background: transparent;
+        color: var(--text-primary);
+        border-color: var(--text-primary);
+    }
+
+    .btn.secondary:hover {
+        background: var(--text-primary);
+        color: var(--bg-primary);
+        transform: translateY(-5px);
+    }
+
+    /* Geometric Shapes Styling */
+    .geo-shape {
+        opacity: 0.8;
+        z-index: 2;
+    }
+
+    /* Dotted Pattern Areas */
+    .dotted-area-1 {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 40%;
+        height: 50%;
+        z-index: 1;
+    }
+
+    .dotted-area-2 {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 35%;
+        height: 40%;
+        z-index: 1;
+    }
+
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: clamp(2.5rem, 10vw, 4rem);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+
+<script>
+    import gsap from "gsap";
+
+    // Hero animations
+    window.addEventListener("load", () => {
+        const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
+
+        tl.from(".hero-title", {
+            y: 100,
+            opacity: 0,
+            duration: 1.2,
+            scale: 0.8,
+        })
+            .from(
+                ".subtitle",
+                {
+                    y: 30,
+                    opacity: 0,
+                    duration: 1,
+                },
+                "-=0.8",
+            )
+            .from(
+                ".btn",
+                {
+                    y: 20,
+                    opacity: 0,
+                    duration: 0.8,
+                    stagger: 0.15,
+                },
+                "-=0.6",
+            )
+            .from(
+                ".geo-shape",
+                {
+                    scale: 0,
+                    opacity: 0,
+                    rotation: 45,
+                    duration: 1,
+                    stagger: 0.1,
+                },
+                "-=1.2",
+            )
+            .from(
+                [".dotted-area-1", ".dotted-area-2"],
+                {
+                    opacity: 0,
+                    duration: 1.5,
+                    stagger: 0.2,
+                },
+                "-=1",
+            );
+
+        // Floating animation for geometric shapes
+        gsap.to(".geo-shape", {
+            y: "random(-20, 20)",
+            x: "random(-15, 15)",
+            rotation: "random(-10, 10)",
+            duration: "random(3, 5)",
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+            stagger: {
+                each: 0.2,
+                from: "random",
+            },
+        });
+    });
+</script>
