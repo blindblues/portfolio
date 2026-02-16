@@ -1,6 +1,6 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations, OrbitControls, useTexture, Float, AdaptiveDpr, Preload } from '@react-three/drei';
+import { useGLTF, useAnimations, OrbitControls, useTexture, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
@@ -8,13 +8,11 @@ const BASE_PATH = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_U
 
 function SceneSetup() {
     const { scene, camera } = useThree();
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-    // Restore original environment map for all devices as requested
-    const texture = useTexture(`${BASE_PATH}/3d/environment.webp`);
+    const texture = useTexture(`${BASE_PATH}/3d/environment.png`);
 
     useEffect(() => {
         if (texture) {
+            // Force Equirectangular mapping for lighting
             texture.mapping = THREE.EquirectangularReflectionMapping;
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.needsUpdate = true;
@@ -25,19 +23,18 @@ function SceneSetup() {
     }, [texture, scene]);
 
     useEffect(() => {
-        // Initial camera close-up
+        // Camera Intro Animation
+        // Start very close
         camera.position.set(0, 0, 1.5);
 
+        // Zoom out smoothly - making the object much smaller
         gsap.to(camera.position, {
-            z: isMobile ? 50 : 80,
-            duration: isMobile ? 2.5 : 4.5,
-            ease: "power2.out",
-            delay: 0.1,
-            onUpdate: () => {
-                camera.updateProjectionMatrix();
-            }
+            z: 80, // High distance for deep zoom out
+            duration: 4.5,
+            ease: "power2.inOut",
+            delay: 0.2
         });
-    }, [camera, isMobile]);
+    }, [camera]);
 
     return null;
 }
@@ -47,20 +44,17 @@ function Model({ url }: { url: string }) {
     const { actions } = useAnimations(animations, scene);
 
     useEffect(() => {
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
         scene.traverse((child) => {
             if (child instanceof THREE.Mesh) {
-                // Essential mobile optimizations keeping things lightweight
-                child.castShadow = false;
-                child.receiveShadow = false;
+                child.castShadow = true;
+                child.receiveShadow = true;
 
                 if (child.material) {
-                    if (isMobile) {
-                        child.material.envMapIntensity = 0.6; // Slightly lowered to help mobile shaders
-                        child.material.roughness = Math.max(child.material.roughness, 0.15);
-                    } else {
+                    if ('envMapIntensity' in child.material) {
                         child.material.envMapIntensity = 1;
+                    }
+                    if ('roughness' in child.material) {
+                        child.material.roughness = Math.max(child.material.roughness, 0.12);
                     }
                 }
             }
@@ -78,32 +72,16 @@ function Model({ url }: { url: string }) {
 }
 
 export default function Scene3D() {
-    const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
     return (
-        <div style={{ width: '100vw', height: '100vh', background: 'black', position: 'fixed', top: 0, left: 0, touchAction: 'none' }}>
+        <div style={{ width: '100vw', height: '100vh', background: 'black', position: 'fixed', top: 0, left: 0 }}>
             <Suspense fallback={null}>
-                <Canvas
-                    flat
-                    dpr={isMobile ? 1 : [1, 2]}
-                    camera={{ position: [0, 0, 1.5], fov: 45 }}
-                    gl={{
-                        antialias: !isMobile,
-                        powerPreference: "high-performance",
-                        stencil: false,
-                        depth: true
-                    }}
-                >
-                    <AdaptiveDpr pixelated />
+                <Canvas shadows camera={{ position: [0, 0, 1.5], fov: 45 }}>
                     <SceneSetup />
 
-                    <ambientLight intensity={0.5} />
+                    <ambientLight intensity={0.4} />
+                    <pointLight position={[10, 10, 10]} intensity={0.8} />
 
-                    <Float
-                        speed={isMobile ? 1 : 1.5}
-                        rotationIntensity={0.3}
-                        floatIntensity={0.3}
-                    >
+                    <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
                         <Model url="/3d/Blowed.glb" />
                     </Float>
 
@@ -112,7 +90,6 @@ export default function Scene3D() {
                         enableZoom={true}
                         makeDefault
                     />
-                    <Preload all />
                 </Canvas>
             </Suspense>
         </div>
