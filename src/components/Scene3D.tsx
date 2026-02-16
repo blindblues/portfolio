@@ -11,7 +11,7 @@ function SceneSetup() {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     // Restore original environment map for all devices as requested
-    const texture = useTexture(`${BASE_PATH}/3d/environment.png`);
+    const texture = useTexture(`${BASE_PATH}/3d/environment.webp`);
 
     useEffect(() => {
         if (texture) {
