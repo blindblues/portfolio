@@ -90,7 +90,7 @@ export default function Scene3D() {
                     <pointLight position={[10, 10, 10]} intensity={1} />
 
                     <Float speed={1.5} rotationIntensity={0.4} floatIntensity={0.4}>
-                        <Model url="/3d/Blowed.glb" />
+                        <Model url="/3d/Blowed2.glb" />
                     </Float>
 
                     <OrbitControls
