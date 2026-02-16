@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations, OrbitControls, useTexture, Float, AdaptiveDpr, Preload, Environment } from '@react-three/drei';
+import { useGLTF, useAnimations, OrbitControls, useTexture, Float, AdaptiveDpr, Preload } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
@@ -10,19 +10,22 @@ function SceneSetup() {
     const { scene, camera } = useThree();
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    // Only load the heavy environment map on Desktop
-    const texture = !isMobile ? useTexture(`${BASE_PATH}/3d/environment.png`) : null;
+    // Restore original environment map for all devices as requested
+    const texture = useTexture(`${BASE_PATH}/3d/environment.png`);
 
     useEffect(() => {
-        if (texture && !isMobile) {
+        if (texture) {
             texture.mapping = THREE.EquirectangularReflectionMapping;
             texture.colorSpace = THREE.SRGBColorSpace;
+            texture.needsUpdate = true;
+
             scene.environment = texture;
+            scene.background = new THREE.Color('#000000');
         }
-        scene.background = new THREE.Color('#000000');
-    }, [texture, scene, isMobile]);
+    }, [texture, scene]);
 
     useEffect(() => {
+        // Initial camera close-up
         camera.position.set(0, 0, 1.5);
 
         gsap.to(camera.position, {
@@ -36,7 +39,7 @@ function SceneSetup() {
         });
     }, [camera, isMobile]);
 
-    return isMobile ? <Environment preset="city" /> : null;
+    return null;
 }
 
 function Model({ url }: { url: string }) {
@@ -48,15 +51,14 @@ function Model({ url }: { url: string }) {
 
         scene.traverse((child) => {
             if (child instanceof THREE.Mesh) {
+                // Essential mobile optimizations keeping things lightweight
                 child.castShadow = false;
                 child.receiveShadow = false;
 
                 if (child.material) {
-                    // Drastic mobile optimization
                     if (isMobile) {
-                        child.material.envMapIntensity = 0.5;
-                        child.material.roughness = 0.2;
-                        child.material.metalness = 0.5;
+                        child.material.envMapIntensity = 0.6; // Slightly lowered to help mobile shaders
+                        child.material.roughness = Math.max(child.material.roughness, 0.15);
                     } else {
                         child.material.envMapIntensity = 1;
                     }
@@ -76,7 +78,6 @@ function Model({ url }: { url: string }) {
 }
 
 export default function Scene3D() {
-    // Hard check for mobile
     const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     return (
@@ -84,10 +85,10 @@ export default function Scene3D() {
             <Suspense fallback={null}>
                 <Canvas
                     flat
-                    dpr={1} // Always 1 for performance on mobile, [1, 2] for desktop
+                    dpr={isMobile ? 1 : [1, 2]}
                     camera={{ position: [0, 0, 1.5], fov: 45 }}
                     gl={{
-                        antialias: false, // Antialiasing is a killer on mobile
+                        antialias: !isMobile,
                         powerPreference: "high-performance",
                         stencil: false,
                         depth: true
@@ -96,12 +97,10 @@ export default function Scene3D() {
                     <AdaptiveDpr pixelated />
                     <SceneSetup />
 
-                    <ambientLight intensity={0.6} />
-                    <pointLight position={[5, 5, 5]} intensity={1} />
+                    <ambientLight intensity={0.5} />
 
-                    {/* Float can cause jitter if CPU is taxed; keeping it minimal */}
                     <Float
-                        speed={isMobile ? 0.8 : 1.5}
+                        speed={isMobile ? 1 : 1.5}
                         rotationIntensity={0.3}
                         floatIntensity={0.3}
                     >
