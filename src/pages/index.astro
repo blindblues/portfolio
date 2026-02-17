@@ -9,16 +9,83 @@ import PortfolioContent from "../components/PortfolioContent.tsx";
 	description="High-end 3D portfolio of Emanuele Greco, Digital Artist & Web Developer."
 >
 	<main>
-		<Scene3D client:only="react" />
-		<PortfolioContent client:only="react" />
+		<div id="intro-container">
+			<Scene3D client:only="react" />
+		</div>
+		<div id="content-container" class="hidden">
+			<PortfolioContent client:only="react" />
+		</div>
 	</main>
 </Layout>
 
+<script>
+	// 480 frames at 60fps = 8 seconds
+	let transitionTimeout: any;
+
+	function performTransition(isSkip = false) {
+		if (transitionTimeout) clearTimeout(transitionTimeout);
+
+		const intro = document.getElementById("intro-container");
+		const content = document.getElementById("content-container");
+
+		if (intro && content && intro.style.display !== "none") {
+			if (isSkip) {
+				// Immediate switch if clicked
+				intro.style.display = "none";
+				content.classList.remove("hidden");
+				content.style.opacity = "1";
+			} else {
+				// Smooth fade if animation finishes on its own
+				intro.style.transition = "opacity 1.5s ease-out";
+				intro.style.opacity = "0";
+
+				content.classList.remove("hidden");
+				content.style.opacity = "0";
+				content.style.transition = "opacity 1.5s ease-in";
+
+				setTimeout(() => {
+					intro.style.display = "none";
+					content.style.opacity = "1";
+				}, 1500);
+			}
+
+			// Dispatch event for PortfolioContent entrance animations
+			window.dispatchEvent(new CustomEvent("modelMoveUpStart"));
+		}
+	}
+
+	// 1. Wait 8 seconds before transitioning automatically (with fade)
+	transitionTimeout = setTimeout(() => performTransition(false), 8000);
+
+	// 2. Click to skip (instant)
+	const introDiv = document.getElementById("intro-container");
+	if (introDiv) {
+		introDiv.addEventListener("click", () => {
+			performTransition(true);
+		});
+		introDiv.style.cursor = "pointer";
+	}
+</script>
+
 <style is:global>
+	#intro-container {
+		position: fixed;
+		inset: 0;
+		z-index: 50;
+		width: 100%;
+		height: 100vh;
+	}
+
 	main {
 		width: 100%;
 		min-height: 100vh;
 		background: #000000;
 		overflow-x: hidden;
+	}
+	.hidden {
+		display: none !important;
+	}
+	.opacity-0 {
+		opacity: 0;
 	}
 </style>

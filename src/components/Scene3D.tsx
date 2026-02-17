@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useGLTF, useAnimations, useTexture, Float, AdaptiveDpr, Preload } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
@@ -59,8 +60,13 @@ function Model({ url, isLoaded }: { url: string, isLoaded: boolean }) {
                 child.castShadow = false;
                 child.receiveShadow = false;
                 if (child.material) {
-                    if ('envMapIntensity' in child.material) child.material.envMapIntensity = 1;
-                    if ('roughness' in child.material) child.material.roughness = Math.max(child.material.roughness, 0.12);
+                    // Inject blue glow into the material
+                    if ('envMapIntensity' in child.material) child.material.envMapIntensity = 2;
+                    if ('roughness' in child.material) child.material.roughness = Math.max(child.material.roughness, 0.1);
+                    if ('emissive' in child.material) {
+                        child.material.emissive = new THREE.Color('#0033ff');
+                        child.material.emissiveIntensity = 1.5;
+                    }
                 }
             }
         });
@@ -71,36 +77,8 @@ function Model({ url, isLoaded }: { url: string, isLoaded: boolean }) {
         }
     }, [actions, animations, scene]);
 
-    // Secondary animation: Move up and scale down
-    useEffect(() => {
-        if (isLoaded) {
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // Removed secondary animation logic as requested.
 
-            const tl = gsap.timeline({
-                delay: 4.7,
-                onStart: () => {
-                    window.dispatchEvent(new CustomEvent('modelMoveUpStart'));
-                },
-                onComplete: () => {
-                    window.dispatchEvent(new CustomEvent('modelAnimationComplete'));
-                }
-            }); // Wait for camera zoom + delay
-
-            tl.to(scene.position, {
-                y: isMobile ? 21 : 27, // Slightly lower than 22/32
-                duration: 2.5,
-                ease: "power3.inOut"
-            });
-
-            tl.to(scene.scale, {
-                x: isMobile ? 0.4 : 0.65, // Larger on desktop
-                y: isMobile ? 0.4 : 0.65,
-                z: isMobile ? 0.4 : 0.65,
-                duration: 2.5,
-                ease: "power3.inOut"
-            }, "<"); // Run simultaneously
-        }
-    }, [isLoaded, scene]);
 
     return <primitive object={scene} />;
 }
@@ -144,7 +122,8 @@ export default function Scene3D() {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 40,
-            pointerEvents: 'none'
+            pointerEvents: 'auto',
+            cursor: 'pointer'
         }}>
             <div
                 ref={overlayRef}
@@ -165,23 +144,33 @@ export default function Scene3D() {
                     dpr={[1, 1.5]}
                     camera={{ position: [0, 0, 2], fov: 45 }}
                     gl={{
-                        antialias: true,
+                        antialias: false, // Performance better with postprocessing
                         powerPreference: "high-performance",
                         alpha: true,
                         stencil: false,
                         depth: true,
                     }}
-                    style={{ pointerEvents: 'none' }}
                 >
                     <AdaptiveDpr pixelated />
                     <SceneSetup />
 
-                    <ambientLight intensity={0.5} />
-                    <pointLight position={[10, 10, 10]} intensity={1} />
+                    <ambientLight intensity={0.2} color="#001144" />
+                    <pointLight position={[10, 15, 10]} intensity={200} color="#0066ff" />
+                    <pointLight position={[-10, -15, -10]} intensity={100} color="#0033ff" />
+                    <spotLight position={[0, 40, 0]} intensity={500} color="#0099ff" distance={100} angle={0.5} />
 
                     <Float speed={2} rotationIntensity={0} floatIntensity={0.5} rotation={[0, 0, 0]}>
                         <Model url="/3d/Blowed2.glb" isLoaded={isLoaded} />
                     </Float>
+
+                    <EffectComposer>
+                        <Bloom
+                            luminanceThreshold={0.2}
+                            mipmapBlur
+                            intensity={1.2}
+                            radius={0.4}
+                        />
+                    </EffectComposer>
 
                     <LoadedTrigger onLoaded={() => setIsLoaded(true)} />
 
