@@ -3,15 +3,36 @@
 ---
 
 <section class="hero">
+    <!-- Background Stretched Text -->
+    <div class="bg-text-wrapper">
+        <svg
+            class="bg-stretch-text"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+        >
+            <text
+                x="0"
+                y="31"
+                textLength="100"
+                lengthAdjust="spacingAndGlyphs"
+                dominant-baseline="central"
+                class="bg-word"
+                id="word-emanuele">EMANUELE</text
+            >
+            <text
+                x="0"
+                y="69"
+                textLength="100"
+                lengthAdjust="spacingAndGlyphs"
+                dominant-baseline="central"
+                class="bg-word"
+                id="word-greco">GRECO</text
+            >
+        </svg>
+    </div>
+
     <div class="container">
-        <div class="hero-content">
-            <h1 class="gaming-text hero-title">EMANUELE<br />GRECO</h1>
-            <p class="subtitle">CREATIVE DESIGNER & DEVELOPER</p>
-            <div class="cta-group">
-                <a href="#projects" class="btn primary">PROGETTI</a>
-                <a href="#contact" class="btn secondary">CONTATTI</a>
-            </div>
-        </div>
+        <!-- Foreground content removed as requested -->
     </div>
 
     <!-- Geometric Shapes -->
@@ -35,11 +56,8 @@
         justify-content: center;
         position: relative;
         overflow: hidden;
-        background: linear-gradient(
-            135deg,
-            var(--bg-primary) 0%,
-            var(--bg-secondary) 100%
-        );
+        background: transparent;
+        z-index: 1; /* Keep it below canvas container if needed, but above body */
     }
 
     .hero-content {
@@ -131,6 +149,41 @@
         z-index: 1;
     }
 
+    /* Background Stretched Text Styling */
+    .bg-text-wrapper {
+        position: absolute;
+        inset: 0;
+        z-index: 2; /* Ensure it is above the section background */
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .bg-stretch-text {
+        width: 100%;
+        height: 100%;
+        opacity: 1;
+        display: block;
+    }
+
+    .bg-word {
+        font-family: "Turret Road", serif;
+        font-weight: 400;
+        fill: #ffffff;
+        text-transform: uppercase;
+        font-size: 50px;
+        transition:
+            fill 0.4s ease,
+            opacity 0.4s ease,
+            letter-spacing 0.4s ease;
+        pointer-events: auto; /* Enable hover on letters */
+        cursor: default;
+    }
+
+    .bg-word:hover {
+        fill: var(--text-secondary, #8ce9ff);
+        opacity: 0.8;
+    }
+
     @media (max-width: 768px) {
         .hero-title {
             font-size: clamp(2.5rem, 10vw, 4rem);
@@ -150,36 +203,36 @@
 <script>
     import gsap from "gsap";
 
-    // Hero animations
+    // Hero animations synchronized with 3D camera
     window.addEventListener("load", () => {
-        const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
+        // Set initial positions immediately
+        gsap.set("#word-emanuele", { xPercent: -100 });
+        gsap.set("#word-greco", { xPercent: 100 });
 
-        tl.from(".hero-title", {
-            y: 100,
-            opacity: 0,
-            duration: 1.2,
-            scale: 0.8,
-        })
-            .from(
-                ".subtitle",
+        // Listen for the camera animation to finish
+        window.addEventListener("cameraAnimationComplete", () => {
+            const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
+
+            tl.to(
+                "#word-emanuele",
                 {
-                    y: 30,
-                    opacity: 0,
-                    duration: 1,
+                    xPercent: 0,
+                    duration: 2,
+                    clearProps: "all",
                 },
-                "-=0.8",
-            )
-            .from(
-                ".btn",
+                "+=0.2",
+            ).to(
+                "#word-greco",
                 {
-                    y: 20,
-                    opacity: 0,
-                    duration: 0.8,
-                    stagger: 0.15,
+                    xPercent: 0,
+                    duration: 2,
+                    clearProps: "all",
                 },
-                "-=0.6",
-            )
-            .from(
+                "-=1.6", // Overlap for smoother effect
+            );
+
+            // Trigger geometric shapes and dotted patterns alongside the words
+            tl.from(
                 ".geo-shape",
                 {
                     scale: 0,
@@ -188,9 +241,8 @@
                     duration: 1,
                     stagger: 0.1,
                 },
-                "-=1.2",
-            )
-            .from(
+                "-=1.5",
+            ).from(
                 [".dotted-area-1", ".dotted-area-2"],
                 {
                     opacity: 0,
@@ -199,8 +251,9 @@
                 },
                 "-=1",
             );
+        });
 
-        // Floating animation for geometric shapes
+        // Floating animation for geometric shapes (independent)
         gsap.to(".geo-shape", {
             y: "random(-20, 20)",
             x: "random(-15, 15)",

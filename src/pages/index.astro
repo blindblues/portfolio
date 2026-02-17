@@ -1,19 +1,32 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Hero from "../components/Hero.astro";
 import Scene3D from "../components/Scene3D.tsx";
 ---
 
 <Layout title="Emanuele Greco" description="Personal Portfolio">
 	<main>
-		<Scene3D client:only="react" />
+		<Hero />
+		<div class="canvas-container">
+			<Scene3D client:only="react" />
+		</div>
 	</main>
 </Layout>
 
 <style>
 	main {
 		width: 100%;
-		height: 100vh;
-		background: black;
-		overflow: hidden;
+		min-height: 100vh;
+		position: relative;
+		background: #000000;
+	}
+	.canvas-container {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 10;
+		pointer-events: none; /* Already set, but confirming it's there */
 	}
 </style>

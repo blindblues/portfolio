@@ -16,7 +16,7 @@ function SceneSetup() {
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.needsUpdate = true;
             scene.environment = texture;
-            scene.background = new THREE.Color('#000000');
+            // Removed scene.background to allow transparency
         }
     }, [texture, scene]);
 
@@ -28,7 +28,10 @@ function SceneSetup() {
             z: isMobile ? 60 : 80,
             duration: 4.5,
             ease: "power2.inOut",
-            delay: 0.2
+            delay: 0.2,
+            onComplete: () => {
+                window.dispatchEvent(new CustomEvent('cameraAnimationComplete'));
+            }
         });
     }, [camera]);
 
@@ -98,7 +101,7 @@ export default function Scene3D() {
     }, [isLoaded]);
 
     return (
-        <div style={{ width: '100vw', height: '100vh', background: 'black', position: 'fixed', top: 0, left: 0, touchAction: 'none' }}>
+        <div style={{ width: '100vw', height: '100vh', background: 'transparent', position: 'fixed', top: 0, left: 0, touchAction: 'none' }}>
             <div
                 ref={overlayRef}
                 style={{
@@ -120,7 +123,7 @@ export default function Scene3D() {
                     gl={{
                         antialias: true,
                         powerPreference: "high-performance",
-                        alpha: false,
+                        alpha: true,
                         stencil: false,
                         depth: true,
                     }}
