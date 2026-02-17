@@ -369,12 +369,12 @@ export default function PortfolioContent() {
             <div className="h-[32vh]" />
 
             {/* 3. GRIGLIA IMMAGINI */}
-            <section className="w-full px-4 py-12 pb-32">
+            <section className="w-full px-4 pt-4 pb-32">
                 <div className="columns-2 md:columns-4 gap-4 mx-auto max-w-[1920px]">
                     {currentImages.map((img, i) => (
                         <div
                             key={`${activeTab}-${i}`}
-                            className="grid-item break-inside-avoid relative group overflow-hidden rounded-2xl opacity-0 mb-4 bg-zinc-900"
+                            className="grid-item inline-block w-full break-inside-avoid relative group overflow-hidden rounded-2xl opacity-0 mb-4 bg-zinc-900"
                         >
                             <img
                                 src={img.src}
