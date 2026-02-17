@@ -165,11 +165,21 @@ export default function PortfolioContent() {
         const handleScroll = () => {
             const scrollY = window.scrollY;
             setIsScrolled(scrollY > 50);
-            // Progress from 0 to 1 over 300px
-            const progress = Math.min(scrollY / 300, 1);
+
+            // Ensure exact 0 when at top
+            if (scrollY === 0) {
+                setScrollProgress(0);
+                return;
+            }
+
+            // Progress from 0 to 1 over 300px with smooth precision
+            const progress = Math.min(Math.max(scrollY / 300, 0), 1);
             setScrollProgress(progress);
         };
-        window.addEventListener('scroll', handleScroll);
+        // Add passive listener for better scroll performance
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        // Initial check
+        handleScroll();
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
