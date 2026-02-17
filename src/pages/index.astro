@@ -1,25 +1,24 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Scene3D from "../components/Scene3D.tsx";
+import PortfolioContent from "../components/PortfolioContent.tsx";
 ---
 
-<Layout title="Emanuele Greco" description="3D Portfolio View">
+<Layout
+	title="Emanuele Greco"
+	description="High-end 3D portfolio of Emanuele Greco, Digital Artist & Web Developer."
+>
 	<main>
-		<div class="canvas-container">
-			<Scene3D client:only="react" />
-		</div>
+		<Scene3D client:only="react" />
+		<PortfolioContent client:only="react" />
 	</main>
 </Layout>
 
-<style>
+<style is:global>
 	main {
 		width: 100%;
-		height: 100vh;
+		min-height: 100vh;
 		background: #000000;
-		overflow: hidden;
-	}
-	.canvas-container {
-		width: 100%;
-		height: 100%;
+		overflow-x: hidden;
 	}
 </style>

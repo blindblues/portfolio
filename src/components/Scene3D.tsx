@@ -21,49 +21,88 @@ function SceneSetup() {
 
     useEffect(() => {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        camera.position.set(0, 0, 1.5);
 
-        gsap.to(camera.position, {
+        // Ensure initial position is consistent
+        camera.position.set(0, 0, 2);
+        camera.lookAt(0, 0, 0);
+
+        const tl = gsap.timeline({ delay: 0.2 });
+
+        // 1. Camera zoom out
+        tl.to(camera.position, {
             z: isMobile ? 60 : 80,
             duration: 4.5,
             ease: "power2.inOut",
-            delay: 0.2
         });
+
+        // 2. Model moves up and scales down after camera animation
+        // We target the scene in the Model component using a custom event or shared state
+        // But since we want it polished, let's use a timeline that can be coordinated.
     }, [camera]);
 
     return null;
 }
 
-function Model({ url }: { url: string }) {
+function Model({ url, isLoaded }: { url: string, isLoaded: boolean }) {
     const { scene, animations } = useGLTF(`${BASE_PATH}${url}`);
     const { actions } = useAnimations(animations, scene);
+    const modelRef = useRef<THREE.Group>(null!);
 
     useEffect(() => {
+        // Reset scene rotation and position to a known state
+        scene.rotation.set(0, 0, 0);
+        scene.position.set(0, -1, 0);
+        scene.scale.set(2, 2, 2);
+
         scene.traverse((child) => {
             if (child instanceof THREE.Mesh) {
                 child.castShadow = false;
                 child.receiveShadow = false;
-
                 if (child.material) {
-                    if ('envMapIntensity' in child.material) {
-                        child.material.envMapIntensity = 1;
-                    }
-                    if ('roughness' in child.material) {
-                        child.material.roughness = Math.max(child.material.roughness, 0.12);
-                    }
+                    if ('envMapIntensity' in child.material) child.material.envMapIntensity = 1;
+                    if ('roughness' in child.material) child.material.roughness = Math.max(child.material.roughness, 0.12);
                 }
             }
         });
 
         if (animations.length > 0) {
             const action = actions[Object.keys(actions)[0]];
-            if (action) {
-                action.reset().fadeIn(0.5).play();
-            }
+            if (action) action.reset().play();
         }
     }, [actions, animations, scene]);
 
-    return <primitive object={scene} scale={2} position={[0, -1, 0]} />;
+    // Secondary animation: Move up and scale down
+    useEffect(() => {
+        if (isLoaded) {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+            const tl = gsap.timeline({
+                delay: 4.7,
+                onStart: () => {
+                    window.dispatchEvent(new CustomEvent('modelMoveUpStart'));
+                },
+                onComplete: () => {
+                    window.dispatchEvent(new CustomEvent('modelAnimationComplete'));
+                }
+            }); // Wait for camera zoom + delay
+
+            tl.to(scene.position, {
+                y: isMobile ? 21 : 27, // Slightly lower than 22/32
+                duration: 2.5,
+                ease: "power3.inOut"
+            });
+
+            tl.to(scene.scale, {
+                x: isMobile ? 0.4 : 0.65, // Larger on desktop
+                y: isMobile ? 0.4 : 0.65,
+                z: isMobile ? 0.4 : 0.65,
+                duration: 2.5,
+                ease: "power3.inOut"
+            }, "<"); // Run simultaneously
+        }
+    }, [isLoaded, scene]);
+
+    return <primitive object={scene} />;
 }
 
 function LoadedTrigger({ onLoaded }: { onLoaded: () => void }) {
@@ -94,7 +133,19 @@ export default function Scene3D() {
     }, [isLoaded]);
 
     return (
-        <div style={{ width: '100%', height: '100%', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100vh',
+            background: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 40,
+            pointerEvents: 'none'
+        }}>
             <div
                 ref={overlayRef}
                 style={{
@@ -112,7 +163,7 @@ export default function Scene3D() {
                 <Canvas
                     flat
                     dpr={[1, 1.5]}
-                    camera={{ position: [0, 0, 1.5], fov: 45 }}
+                    camera={{ position: [0, 0, 2], fov: 45 }}
                     gl={{
                         antialias: true,
                         powerPreference: "high-performance",
@@ -120,6 +171,7 @@ export default function Scene3D() {
                         stencil: false,
                         depth: true,
                     }}
+                    style={{ pointerEvents: 'none' }}
                 >
                     <AdaptiveDpr pixelated />
                     <SceneSetup />
@@ -127,8 +179,8 @@ export default function Scene3D() {
                     <ambientLight intensity={0.5} />
                     <pointLight position={[10, 10, 10]} intensity={1} />
 
-                    <Float speed={1.5} rotationIntensity={0.4} floatIntensity={0.4}>
-                        <Model url="/3d/Blowed2.glb" />
+                    <Float speed={2} rotationIntensity={0} floatIntensity={0.5} rotation={[0, 0, 0]}>
+                        <Model url="/3d/Blowed2.glb" isLoaded={isLoaded} />
                     </Float>
 
                     <LoadedTrigger onLoaded={() => setIsLoaded(true)} />
