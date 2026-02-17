@@ -5,11 +5,12 @@ import Scene3D from "../components/Scene3D.tsx";
 ---
 
 <Layout title="Emanuele Greco" description="Personal Portfolio">
-	<main>
+	<main id="main-scroll-container">
 		<Hero />
-		<div class="canvas-container">
+		<div class="canvas-container" id="main-canvas">
 			<Scene3D client:only="react" />
 		</div>
+		<div class="scroll-spacer"></div>
 	</main>
 </Layout>
 
@@ -25,8 +26,11 @@ import Scene3D from "../components/Scene3D.tsx";
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 100%;
+		height: 100vh;
 		z-index: 10;
-		pointer-events: none; /* Already set, but confirming it's there */
+		pointer-events: none;
+	}
+	.scroll-spacer {
+		height: 200vh;
 	}
 </style>

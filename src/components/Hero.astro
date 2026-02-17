@@ -202,36 +202,33 @@
 
 <script>
     import gsap from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    gsap.registerPlugin(ScrollTrigger);
 
     // Hero animations synchronized with 3D camera
     window.addEventListener("load", () => {
-        // Set initial positions immediately
+        // Set initial positions immediately (text hidden off-screen)
         gsap.set("#word-emanuele", { xPercent: -100 });
         gsap.set("#word-greco", { xPercent: 100 });
 
-        // Listen for the camera animation to finish
+        // Listen for the camera zoom-out animation to finish
         window.addEventListener("cameraAnimationComplete", () => {
-            const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
+            const tl = gsap.timeline({
+                defaults: { ease: "power4.out" },
+                onComplete: () => {
+                    // Only enable scroll effects after entrance is done
+                    initScrollEffects();
+                },
+            });
 
-            tl.to(
-                "#word-emanuele",
-                {
-                    xPercent: 0,
-                    duration: 2,
-                    clearProps: "all",
-                },
-                "+=0.2",
-            ).to(
+            // Text entrance: slide in from left and right
+            tl.to("#word-emanuele", { xPercent: 0, duration: 2 }, "+=0.2").to(
                 "#word-greco",
-                {
-                    xPercent: 0,
-                    duration: 2,
-                    clearProps: "all",
-                },
-                "-=1.6", // Overlap for smoother effect
+                { xPercent: 0, duration: 2 },
+                "-=1.6",
             );
 
-            // Trigger geometric shapes and dotted patterns alongside the words
+            // Geometric shapes entrance
             tl.from(
                 ".geo-shape",
                 {
@@ -244,16 +241,35 @@
                 "-=1.5",
             ).from(
                 [".dotted-area-1", ".dotted-area-2"],
-                {
-                    opacity: 0,
-                    duration: 1.5,
-                    stagger: 0.2,
-                },
+                { opacity: 0, duration: 1.5, stagger: 0.2 },
                 "-=1",
             );
         });
 
-        // Floating animation for geometric shapes (independent)
+        function initScrollEffects() {
+            // Background text: slide out following entrance direction
+            gsap.to("#word-emanuele", {
+                xPercent: -150,
+                scrollTrigger: {
+                    trigger: ".hero",
+                    start: "top top",
+                    end: "bottom top",
+                    scrub: true,
+                },
+            });
+
+            gsap.to("#word-greco", {
+                xPercent: 150,
+                scrollTrigger: {
+                    trigger: ".hero",
+                    start: "top top",
+                    end: "bottom top",
+                    scrub: true,
+                },
+            });
+        }
+
+        // Independent floating animation for geometric shapes
         gsap.to(".geo-shape", {
             y: "random(-20, 20)",
             x: "random(-15, 15)",

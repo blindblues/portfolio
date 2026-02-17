@@ -101,7 +101,7 @@ export default function Scene3D() {
     }, [isLoaded]);
 
     return (
-        <div style={{ width: '100vw', height: '100vh', background: 'transparent', position: 'fixed', top: 0, left: 0, touchAction: 'none' }}>
+        <div style={{ width: '100%', height: '100%', background: 'transparent', touchAction: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div
                 ref={overlayRef}
                 style={{
