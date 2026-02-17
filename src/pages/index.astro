@@ -1,36 +1,25 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import Hero from "../components/Hero.astro";
 import Scene3D from "../components/Scene3D.tsx";
 ---
 
-<Layout title="Emanuele Greco" description="Personal Portfolio">
-	<main id="main-scroll-container">
-		<Hero />
-		<div class="canvas-container" id="main-canvas">
+<Layout title="Emanuele Greco" description="3D Portfolio View">
+	<main>
+		<div class="canvas-container">
 			<Scene3D client:only="react" />
 		</div>
-		<div class="scroll-spacer"></div>
 	</main>
 </Layout>
 
 <style>
 	main {
 		width: 100%;
-		min-height: 100vh;
-		position: relative;
+		height: 100vh;
 		background: #000000;
+		overflow: hidden;
 	}
 	.canvas-container {
-		position: fixed;
-		top: 0;
-		left: 0;
 		width: 100%;
-		height: 100vh;
-		z-index: 10;
-		pointer-events: none;
-	}
-	.scroll-spacer {
-		height: 200vh;
+		height: 100%;
 	}
 </style>

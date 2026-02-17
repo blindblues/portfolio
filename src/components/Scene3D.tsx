@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations, OrbitControls, useTexture, Float, AdaptiveDpr, Preload } from '@react-three/drei';
+import { useGLTF, useAnimations, useTexture, Float, AdaptiveDpr, Preload } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
@@ -16,7 +16,6 @@ function SceneSetup() {
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.needsUpdate = true;
             scene.environment = texture;
-            // Removed scene.background to allow transparency
         }
     }, [texture, scene]);
 
@@ -28,10 +27,7 @@ function SceneSetup() {
             z: isMobile ? 60 : 80,
             duration: 4.5,
             ease: "power2.inOut",
-            delay: 0.2,
-            onComplete: () => {
-                window.dispatchEvent(new CustomEvent('cameraAnimationComplete'));
-            }
+            delay: 0.2
         });
     }, [camera]);
 
@@ -70,9 +66,6 @@ function Model({ url }: { url: string }) {
     return <primitive object={scene} scale={2} position={[0, -1, 0]} />;
 }
 
-/**
- * A small component to signal that Suspense has finished loading its children
- */
 function LoadedTrigger({ onLoaded }: { onLoaded: () => void }) {
     useEffect(() => {
         onLoaded();
@@ -101,7 +94,7 @@ export default function Scene3D() {
     }, [isLoaded]);
 
     return (
-        <div style={{ width: '100%', height: '100%', background: 'transparent', touchAction: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '100%', height: '100%', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div
                 ref={overlayRef}
                 style={{
@@ -140,12 +133,6 @@ export default function Scene3D() {
 
                     <LoadedTrigger onLoaded={() => setIsLoaded(true)} />
 
-                    <OrbitControls
-                        enablePan={false}
-                        enableZoom={false}
-                        enableRotate={false}
-                        makeDefault
-                    />
                     <Preload all />
                 </Canvas>
             </Suspense>
