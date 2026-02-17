@@ -310,7 +310,7 @@ export default function PortfolioContent() {
                     ref={headerRef}
                     className="w-full relative flex items-center justify-center transition-all duration-300 ease-out"
                     style={{
-                        height: `${30 - (scrollProgress * 15)}vh`
+                        height: `${(windowWidth < 768 ? 24 : 30) - (scrollProgress * (windowWidth < 768 ? 9 : 15))}vh`
                     }}
                 >
                     <div className="w-[50vw] h-[50vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -378,7 +378,7 @@ export default function PortfolioContent() {
             </div>
 
             {/* SPACER FOR FIXED HEADER */}
-            <div className="h-[32vh]" />
+            <div className={`transition-[height] duration-300 ${windowWidth < 768 ? 'h-[26vh]' : 'h-[32vh]'}`} />
 
             {/* 3. GRIGLIA IMMAGINI */}
             <section className="w-full px-4 py-12 pb-32">
