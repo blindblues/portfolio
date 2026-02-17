@@ -149,10 +149,12 @@ export default function PortfolioContent() {
     const [scrollProgress, setScrollProgress] = useState(0);
 
     const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 1000);
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
     useEffect(() => {
         const handleResize = () => {
             setWindowHeight(window.innerHeight);
+            setWindowWidth(window.innerWidth);
         };
         handleResize();
         window.addEventListener('resize', handleResize);
@@ -369,20 +371,29 @@ export default function PortfolioContent() {
             <div className="h-[32vh]" />
 
             {/* 3. GRIGLIA IMMAGINI */}
-            <section className="w-full px-4 pt-4 pb-32">
-                <div className="columns-2 md:columns-4 gap-4 mx-auto max-w-[1920px]">
-                    {currentImages.map((img, i) => (
+            <section className="w-full px-4 py-12 pb-32">
+                <div className="flex flex-row gap-4 mx-auto max-w-[1920px]">
+                    {[...Array(windowWidth < 768 ? 2 : 4)].map((_, colIndex) => (
                         <div
-                            key={`${activeTab}-${i}`}
-                            className="grid-item inline-block w-full break-inside-avoid relative group overflow-hidden rounded-2xl opacity-0 mb-4 bg-zinc-900"
+                            key={colIndex}
+                            className="flex-1 flex flex-col gap-4"
                         >
-                            <img
-                                src={img.src}
-                                alt="Portfolio Work"
-                                className="w-full h-auto object-cover cursor-pointer"
-                                onClick={() => setSelectedImage(img)}
-                                loading="lazy"
-                            />
+                            {currentImages
+                                .filter((_, i) => i % (windowWidth < 768 ? 2 : 4) === colIndex)
+                                .map((img, i) => (
+                                    <div
+                                        key={`${activeTab}-${colIndex}-${i}`}
+                                        className="grid-item relative group overflow-hidden rounded-2xl bg-zinc-900"
+                                    >
+                                        <img
+                                            src={img.src}
+                                            alt="Portfolio Work"
+                                            className="w-full h-auto object-cover cursor-pointer"
+                                            onClick={() => setSelectedImage(img)}
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                ))}
                         </div>
                     ))}
                 </div>
