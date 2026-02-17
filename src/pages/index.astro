@@ -19,6 +19,12 @@ import PortfolioContent from "../components/PortfolioContent.tsx";
 </Layout>
 
 <script>
+	// Force scroll to top on reload
+	if (typeof history !== "undefined" && "scrollRestoration" in history) {
+		history.scrollRestoration = "manual";
+	}
+	window.scrollTo(0, 0);
+
 	// 480 frames at 60fps = 8 seconds
 	let transitionTimeout: any;
 

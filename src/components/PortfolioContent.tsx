@@ -271,15 +271,15 @@ export default function PortfolioContent() {
         if (!modalContainerRef.current) return;
         const touch = e.touches[0];
         // Increased sensitivity for mobile feel
-        const deltaX = ((touch.clientX - touchStartPos.current.x) / window.innerWidth) * 2.5;
-        const deltaY = ((touch.clientY - touchStartPos.current.y) / window.innerHeight) * 2.5;
+        const deltaX = ((touch.clientX - touchStartPos.current.x) / window.innerWidth) * 3; // Boosted sensitivity
+        const deltaY = ((touch.clientY - touchStartPos.current.y) / window.innerHeight) * 3;
 
         gsap.to(modalContainerRef.current, {
             rotationY: deltaX * 45,
             rotationX: -deltaY * 45,
-            scale: 1.05,
-            duration: 0.2, // More responsive for touch
-            ease: "power2.out",
+            scale: 1.1, // More obvious scale effect
+            duration: 0.1, // Faster response
+            ease: "power1.out",
             transformPerspective: 1000,
             transformOrigin: "center",
             overwrite: "auto"
@@ -423,7 +423,7 @@ export default function PortfolioContent() {
                 >
                     <div
                         ref={modalContainerRef}
-                        className="relative rounded-lg overflow-hidden shadow-2xl inline-block"
+                        className="relative rounded-lg overflow-hidden shadow-2xl inline-block touch-none"
                         style={{ transformStyle: 'preserve-3d' }}
                         onClick={(e) => e.stopPropagation()}
                     >
