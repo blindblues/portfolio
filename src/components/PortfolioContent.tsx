@@ -347,21 +347,21 @@ export default function PortfolioContent() {
                         marginTop: `0rem`
                     }}
                 >
-                    <div className={`flex gap-4 md:gap-8 rounded-full pointer-events-auto transition-all duration-500 ease-in-out ${isScrolled
-                        ? 'bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.9)] scale-90 px-6 py-2'
-                        : 'bg-transparent border-transparent shadow-none scale-100 px-8 py-3'
+                    <div className={`flex items-center transition-all duration-500 ease-in-out pointer-events-auto rounded-full ${isScrolled
+                        ? 'bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.9)] gap-6 md:gap-10 px-4 py-2'
+                        : 'bg-transparent border-transparent shadow-none gap-8 md:gap-14 px-6 py-3'
                         }`}>
                         {categories.map((cat) => (
-                            <button
+                            <p
                                 key={cat}
                                 onClick={() => setActiveTab(cat)}
-                                className={`text-[9px] md:text-xs font-black tracking-[0.2em] transition-all duration-300 ${activeTab === cat
-                                    ? 'text-white opacity-100 scale-110'
-                                    : 'text-white/50 hover:text-white/80'
+                                className={`cursor-pointer whitespace-nowrap text-[9px] md:text-xs font-black tracking-[0.2em] transition-all duration-300 ${activeTab === cat
+                                    ? 'text-white opacity-100 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]'
+                                    : 'text-white/40 hover:text-white/70'
                                     }`}
                             >
                                 {cat}
-                            </button>
+                            </p>
                         ))}
                     </div>
                 </nav>
