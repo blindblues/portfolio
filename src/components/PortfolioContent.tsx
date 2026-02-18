@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { useGLTF, useAnimations, useTexture, AdaptiveDpr, Preload } from '@react-three/drei';
+import { useGLTF, useAnimations, useTexture, AdaptiveDpr, Preload, Center } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -62,7 +62,11 @@ const MiniModel = React.memo(function MiniModel({ scrollRef, isMobile }: { scrol
         }
     });
 
-    return <primitive ref={modelRef} object={clonedScene} position={[0, -1.8, 0]} scale={[1.4, 1.4, 1.4]} />;
+    return (
+        <Center>
+            <primitive ref={modelRef} object={clonedScene} position={[0, -1.8, 0]} scale={[1.4, 1.4, 1.4]} />
+        </Center>
+    );
 });
 
 
@@ -160,6 +164,7 @@ export default function PortfolioContent() {
     useLayoutEffect(() => {
         if (!blurCircleRef.current) return;
 
+        // Restore centering from commit 67ea5ea
         gsap.set(blurCircleRef.current, { xPercent: -50, yPercent: -50 });
 
         gsap.to(blurCircleRef.current, {
@@ -301,27 +306,25 @@ export default function PortfolioContent() {
                         className="w-full h-[50vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none [&_canvas]:!pointer-events-none"
                         style={{ pointerEvents: 'none' }}
                     >
-                        {/* Blurred Circle Background - Circular mask on top of blurred filter */}
+                        {/* Blurred Circle Background - Position from commit 67ea5ea */}
                         <div
                             ref={blurCircleRef}
                             className="absolute pointer-events-none rounded-full"
                             style={{
-                                top: '53%',
+                                top: `${53 - (scrollProgress * 1.5)}%`,
                                 left: '50%',
-                                width: windowWidth < 768 ? '40vh' : '50vh',
-                                height: windowWidth < 768 ? '40vh' : '50vh',
+                                width: windowWidth < 768 ? '45vh' : '55vh',
+                                height: windowWidth < 768 ? '45vh' : '55vh',
                                 background: 'transparent',
-                                backdropFilter: windowWidth < 768 ? 'blur(15px)' : 'blur(40px)',
-                                WebkitBackdropFilter: windowWidth < 768 ? 'blur(15px)' : 'blur(40px)',
-                                // Soft radial mask that fades completely before reaching the element edges
-                                maskImage: 'radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.4) 30%, transparent 55%)',
-                                WebkitMaskImage: 'radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.4) 30%, transparent 55%)',
-                                // Fix centering and prevent transform conflicts
-                                transform: 'translate3d(-50%, -50%, 0)',
-                                isolation: 'isolate',
+                                backdropFilter: 'blur(40px)',
+                                WebkitBackdropFilter: 'blur(40px)',
+                                maskImage: 'radial-gradient(circle, black 0%, transparent 65%)',
+                                WebkitMaskImage: 'radial-gradient(circle, black 0%, transparent 65%)',
                                 zIndex: 0
                             }}
                         />
+
+                        {/* 3D Model Canvas Wrapper */}
                         <Suspense fallback={null}>
                             <Canvas
                                 className="!pointer-events-none"
