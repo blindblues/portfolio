@@ -7,7 +7,7 @@ import gsap from 'gsap';
 
 const BASE_PATH = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const MiniModel = React.memo(function MiniModel({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
+const MiniModel = React.memo(function MiniModel({ scrollRef, isMobile }: { scrollRef: React.MutableRefObject<number>, isMobile: boolean }) {
     const { scene, animations } = useGLTF(`${BASE_PATH}/3d/Blowed2.glb`);
     const clonedScene = React.useMemo(() => scene.clone(), [scene]);
     const { actions } = useAnimations(animations, clonedScene);
@@ -55,10 +55,14 @@ const MiniModel = React.memo(function MiniModel({ scrollRef }: { scrollRef: Reac
             const target = 1.4 - (progress * 0.3);
             const s = THREE.MathUtils.lerp(modelRef.current.scale.x, target, 0.1);
             modelRef.current.scale.set(s, s, s);
+
+            // Move model up slightly when scrolling
+            const targetY = -1.8 + (progress * 0.8);
+            modelRef.current.position.y = THREE.MathUtils.lerp(modelRef.current.position.y, targetY, 0.1);
         }
     });
 
-    return <primitive ref={modelRef} object={clonedScene} position={[0, -1, 0]} />;
+    return <primitive ref={modelRef} object={clonedScene} position={[0, -1.8, 0]} />;
 });
 
 
@@ -311,18 +315,23 @@ export default function PortfolioContent() {
             {/* 1 & 2. FIXED TOP SECTION (Header + Tabs) */}
             <div
                 className="fixed top-0 left-0 w-full z-50 pointer-events-none transition-transform duration-300 ease-out"
-                style={{ transform: `translateY(-${scrollProgress * 0.8}vh)` }}
+                style={{ transform: `translateY(-${scrollProgress * 0.8}vh)`, pointerEvents: 'none' }}
             >
                 <header
                     ref={headerRef}
-                    className="w-full relative flex items-center justify-center transition-all duration-300 ease-out"
+                    className="w-full relative flex items-center justify-center transition-all duration-300 ease-out pointer-events-none"
                     style={{
-                        height: `${(windowWidth < 768 ? 24 : 30) - (scrollProgress * (windowWidth < 768 ? 9 : 15))}vh`
+                        height: `${(windowWidth < 768 ? 18 : 30) - (scrollProgress * (windowWidth < 768 ? 3 : 15))}vh`,
+                        pointerEvents: 'none'
                     }}
                 >
-                    <div className="w-[50vw] h-[50vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div
+                        className="w-[50vw] h-[50vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none [&_canvas]:!pointer-events-none"
+                        style={{ pointerEvents: 'none' }}
+                    >
                         <Suspense fallback={null}>
                             <Canvas
+                                className="!pointer-events-none"
                                 flat
                                 dpr={[1, 1.5]}
                                 camera={{ position: [0, 0, 60], fov: 45 }}
@@ -339,7 +348,7 @@ export default function PortfolioContent() {
                                 <pointLight position={[-10, -15, -10]} intensity={100} color="#0033ff" />
                                 <spotLight position={[0, 40, 0]} intensity={500} color="#0099ff" distance={100} angle={0.5} />
 
-                                <MiniModel scrollRef={scrollRef} />
+                                <MiniModel scrollRef={scrollRef} isMobile={windowWidth < 768} />
 
                                 <EffectComposer>
                                     <Bloom
@@ -358,7 +367,7 @@ export default function PortfolioContent() {
 
                 <nav
                     ref={tabsRef}
-                    className="w-full flex justify-center items-center transition-all duration-300 ease-out pb-2"
+                    className="w-full flex justify-center items-center transition-all duration-300 ease-out pb-2 pointer-events-none"
                     style={{
                         paddingTop: `${1.5 - (scrollProgress * 1)}rem`,
                         marginTop: `0rem`
@@ -385,7 +394,7 @@ export default function PortfolioContent() {
             </div>
 
             {/* SPACER FOR FIXED HEADER */}
-            <div className={`transition-[height] duration-300 ${windowWidth < 768 ? 'h-[26vh]' : 'h-[32vh]'}`} />
+            <div className={`transition-[height] duration-300 ${windowWidth < 768 ? 'h-[20vh]' : 'h-[32vh]'}`} />
 
             {/* 3. GRIGLIA IMMAGINI */}
             <section className="w-full px-4 py-12 pb-32">
