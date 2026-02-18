@@ -56,16 +56,19 @@ const MiniModel = React.memo(function MiniModel({ scrollRef, isMobile }: { scrol
             const s = THREE.MathUtils.lerp(modelRef.current.scale.x, target, 0.1);
             modelRef.current.scale.set(s, s, s);
 
-            // Move model up slightly when scrolling
+            // Move model up slightly when scrolling - Ripristinato come 67ea5ea
             const targetY = -1.8 + (progress * 0.8);
             modelRef.current.position.y = THREE.MathUtils.lerp(modelRef.current.position.y, targetY, 0.1);
         }
     });
 
     return (
-        <Center>
-            <primitive ref={modelRef} object={clonedScene} position={[0, -1.8, 0]} scale={[1.4, 1.4, 1.4]} />
-        </Center>
+        <primitive
+            ref={modelRef}
+            object={clonedScene}
+            position={[0, -1.8, 0]}
+            scale={[1.4, 1.4, 1.4]}
+        />
     );
 });
 
