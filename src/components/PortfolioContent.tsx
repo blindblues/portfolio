@@ -62,7 +62,7 @@ const MiniModel = React.memo(function MiniModel({ scrollRef, isMobile }: { scrol
         }
     });
 
-    return <primitive ref={modelRef} object={clonedScene} position={[0, -1.8, 0]} />;
+    return <primitive ref={modelRef} object={clonedScene} position={[0, -1.8, 0]} scale={[1.4, 1.4, 1.4]} />;
 });
 
 
@@ -137,7 +137,7 @@ export default function PortfolioContent() {
 
     const currentImages = getImagesForTab();
 
-    const [isVisible, setIsVisible] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
     const [selectedImage, setSelectedImage] = useState<typeof graphicDesignImages[0] | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const modalContainerRef = useRef<HTMLDivElement>(null);
@@ -145,6 +145,7 @@ export default function PortfolioContent() {
     const touchStartPos = useRef({ x: 0, y: 0 });
     const isTouchRef = useRef(false);
     const isInitialLoad = useRef(true);
+    const headerRef = useRef<HTMLElement>(null);
     const tabsRef = useRef<HTMLElement>(null);
     const [isScrolled, setIsScrolled] = useState(false);
     const [scrollProgress, setScrollProgress] = useState(0);
@@ -188,57 +189,7 @@ export default function PortfolioContent() {
 
 
 
-    const headerRef = useRef<HTMLElement>(null);
-
-    // Animation for Header
-    useLayoutEffect(() => {
-        if (!isVisible || !headerRef.current) return;
-        gsap.fromTo(headerRef.current,
-            { y: 30, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.8, ease: "power3.out", delay: 0 }
-        );
-    }, [isVisible]);
-
-    // Animation for Tabs
-    useLayoutEffect(() => {
-        if (!isVisible || !tabsRef.current) return;
-        gsap.fromTo(tabsRef.current,
-            { y: 20, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.6, ease: "power3.out", delay: 0 }
-        );
-    }, [isVisible]);
-
-    // Entrance Animation for Grid
-    useLayoutEffect(() => {
-        if (!isVisible) return;
-        const ctx = gsap.context(() => {
-            const items = gsap.utils.toArray('.grid-item');
-            gsap.fromTo(items,
-                { y: 50, opacity: 0 },
-                {
-                    opacity: 1,
-                    y: 0,
-                    stagger: 0,
-                    duration: 0.8,
-                    ease: "power3.out",
-                    delay: 0,
-                    overwrite: true
-                }
-            );
-            isInitialLoad.current = false;
-        }, containerRef);
-        return () => ctx.revert();
-    }, [isVisible, activeTab]);
-
-    useEffect(() => {
-        const handleStart = () => setIsVisible(true);
-        window.addEventListener('modelMoveUpStart', handleStart);
-        const timer = setTimeout(() => { if (!isVisible) handleStart(); }, 6000);
-        return () => {
-            window.removeEventListener('modelMoveUpStart', handleStart);
-            clearTimeout(timer);
-        };
-    }, [isVisible]);
+    // Entrance animations removed as requested
 
     // 3D Tilt Logic for Modal
     const handleMouseMove = (e: React.MouseEvent) => {
@@ -326,7 +277,7 @@ export default function PortfolioContent() {
                     }}
                 >
                     <div
-                        className="w-[50vw] h-[50vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none [&_canvas]:!pointer-events-none"
+                        className="w-full h-[50vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none [&_canvas]:!pointer-events-none"
                         style={{ pointerEvents: 'none' }}
                     >
                         <Suspense fallback={null}>

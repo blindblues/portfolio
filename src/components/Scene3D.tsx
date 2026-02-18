@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations, useTexture, Float, AdaptiveDpr, Preload } from '@react-three/drei';
+import { useGLTF, useAnimations, useTexture, Float, AdaptiveDpr, Preload, AsciiRenderer, Center } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -50,9 +50,10 @@ function Model({ url, isLoaded }: { url: string, isLoaded: boolean }) {
     const modelRef = useRef<THREE.Group>(null!);
 
     useEffect(() => {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
         // Reset scene rotation and position to a known state
         scene.rotation.set(0, 0, 0);
-        scene.position.set(0, -1, 0);
+        scene.position.set(isMobile ? -0.4 : -4, 0, 0);
         scene.scale.set(2, 2, 2);
 
         scene.traverse((child) => {
@@ -94,50 +95,59 @@ export default function Scene3D() {
     const overlayRef = useRef<HTMLDivElement>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
+    const [asciiChars, setAsciiChars] = useState(" #@%*+=-:. ");
+
     useEffect(() => {
-        if (isLoaded && overlayRef.current) {
-            gsap.to(overlayRef.current, {
-                opacity: 0,
-                duration: 1.2,
-                ease: "power2.out",
-                delay: 0.1,
-                onComplete: () => {
-                    if (overlayRef.current) {
-                        overlayRef.current.style.display = 'none';
-                    }
+        const handleDisintegrate = () => {
+            let currentChars = " #@%*+=-:. ".split("");
+            const interval = setInterval(() => {
+                // Find indices of characters that are not a space
+                const indices = currentChars
+                    .map((char, idx) => (char !== ' ' ? idx : -1))
+                    .filter(idx => idx !== -1);
+
+                if (indices.length === 0) {
+                    clearInterval(interval);
+                    return;
                 }
-            });
+
+                // Pick a random character and turn it into a space
+                const randomIndex = indices[Math.floor(Math.random() * indices.length)];
+                currentChars[randomIndex] = ' ';
+                setAsciiChars(currentChars.join(""));
+            }, 80); // Speed of disintegration
+        };
+
+        window.addEventListener('asciiDisintegrate', handleDisintegrate);
+        return () => window.removeEventListener('asciiDisintegrate', handleDisintegrate);
+    }, []);
+
+    // Initial loading overlay logic removed to start ASCII immediately
+    useEffect(() => {
+        if (isLoaded) {
+            // No longer needed
         }
     }, [isLoaded]);
 
     return (
-        <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100vh',
-            background: 'transparent',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 40,
-            pointerEvents: 'auto',
-            cursor: 'pointer'
-        }}>
-            <div
-                ref={overlayRef}
-                style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    background: 'black',
-                    zIndex: 100,
-                    pointerEvents: 'none'
-                }}
-            />
+        <div
+            id="scene-3d-wrapper"
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100vh',
+                background: 'black', // Initial background for the intro
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 40,
+                pointerEvents: 'auto',
+                cursor: 'pointer',
+                transition: 'background-color 1.5s ease-out, opacity 1.5s ease-out'
+            }}
+        >
             <Suspense fallback={null}>
                 <Canvas
                     flat
@@ -160,17 +170,17 @@ export default function Scene3D() {
                     <spotLight position={[0, 40, 0]} intensity={500} color="#0099ff" distance={100} angle={0.5} />
 
                     <Float speed={2} rotationIntensity={0} floatIntensity={0.5} rotation={[0, 0, 0]}>
-                        <Model url="/3d/Blowed2.glb" isLoaded={isLoaded} />
+                        <Center>
+                            <Model url="/3d/Blowed2.glb" isLoaded={isLoaded} />
+                        </Center>
                     </Float>
 
-                    <EffectComposer>
-                        <Bloom
-                            luminanceThreshold={0.2}
-                            mipmapBlur
-                            intensity={1.2}
-                            radius={0.4}
-                        />
-                    </EffectComposer>
+                    <AsciiRenderer
+                        fgColor="#0033ff"
+                        bgColor="transparent"
+                        characters={asciiChars}
+                        color={true}
+                    />
 
                     <LoadedTrigger onLoaded={() => setIsLoaded(true)} />
 
