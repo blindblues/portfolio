@@ -301,21 +301,24 @@ export default function PortfolioContent() {
                         className="w-full h-[50vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none [&_canvas]:!pointer-events-none"
                         style={{ pointerEvents: 'none' }}
                     >
-                        {/* Blurred Circle Background */}
+                        {/* Blurred Circle Background - Circular mask on top of blurred filter */}
                         <div
                             ref={blurCircleRef}
-                            className="absolute pointer-events-none"
+                            className="absolute pointer-events-none rounded-full"
                             style={{
                                 top: '53%',
                                 left: '50%',
-                                width: windowWidth < 768 ? '45vh' : '55vh',
-                                height: windowWidth < 768 ? '45vh' : '55vh',
+                                width: windowWidth < 768 ? '40vh' : '50vh',
+                                height: windowWidth < 768 ? '40vh' : '50vh',
                                 background: 'transparent',
-                                backdropFilter: 'blur(40px)',
-                                WebkitBackdropFilter: 'blur(40px)',
-                                // The mask DEFINES the shape and feathered edges
-                                maskImage: 'radial-gradient(circle, black 0%, transparent 65%)',
-                                WebkitMaskImage: 'radial-gradient(circle, black 0%, transparent 65%)',
+                                backdropFilter: windowWidth < 768 ? 'blur(15px)' : 'blur(40px)',
+                                WebkitBackdropFilter: windowWidth < 768 ? 'blur(15px)' : 'blur(40px)',
+                                // Soft radial mask that fades completely before reaching the element edges
+                                maskImage: 'radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.4) 30%, transparent 55%)',
+                                WebkitMaskImage: 'radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.4) 30%, transparent 55%)',
+                                // Fix centering and prevent transform conflicts
+                                transform: 'translate3d(-50%, -50%, 0)',
+                                isolation: 'isolate',
                                 zIndex: 0
                             }}
                         />
