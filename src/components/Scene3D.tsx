@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations, useTexture, Float, AdaptiveDpr, Preload, AsciiRenderer, Center } from '@react-three/drei';
+import { useGLTF, useAnimations, useTexture, Float, AdaptiveDpr, Preload, Center } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -53,7 +53,7 @@ function Model({ url, isLoaded }: { url: string, isLoaded: boolean }) {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
         // Reset scene rotation and position to a known state
         scene.rotation.set(0, 0, 0);
-        scene.position.set(isMobile ? -0.4 : -4, 0, 0);
+        scene.position.set(0, 0, 0);
         scene.scale.set(2, 2, 2);
 
         scene.traverse((child) => {
@@ -95,32 +95,8 @@ export default function Scene3D() {
     const overlayRef = useRef<HTMLDivElement>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    const [asciiChars, setAsciiChars] = useState(" #@%*+=-:. ");
 
-    useEffect(() => {
-        const handleDisintegrate = () => {
-            let currentChars = " #@%*+=-:. ".split("");
-            const interval = setInterval(() => {
-                // Find indices of characters that are not a space
-                const indices = currentChars
-                    .map((char, idx) => (char !== ' ' ? idx : -1))
-                    .filter(idx => idx !== -1);
 
-                if (indices.length === 0) {
-                    clearInterval(interval);
-                    return;
-                }
-
-                // Pick a random character and turn it into a space
-                const randomIndex = indices[Math.floor(Math.random() * indices.length)];
-                currentChars[randomIndex] = ' ';
-                setAsciiChars(currentChars.join(""));
-            }, 80); // Speed of disintegration
-        };
-
-        window.addEventListener('asciiDisintegrate', handleDisintegrate);
-        return () => window.removeEventListener('asciiDisintegrate', handleDisintegrate);
-    }, []);
 
     // Initial loading overlay logic removed to start ASCII immediately
     useEffect(() => {
@@ -144,8 +120,7 @@ export default function Scene3D() {
                 justifyContent: 'center',
                 zIndex: 40,
                 pointerEvents: 'auto',
-                cursor: 'pointer',
-                transition: 'background-color 1.5s ease-out, opacity 1.5s ease-out'
+                cursor: 'pointer'
             }}
         >
             <Suspense fallback={null}>
@@ -175,12 +150,16 @@ export default function Scene3D() {
                         </Center>
                     </Float>
 
-                    <AsciiRenderer
-                        fgColor="#0033ff"
-                        bgColor="transparent"
-                        characters={asciiChars}
-                        color={true}
-                    />
+
+
+                    <EffectComposer>
+                        <Bloom
+                            luminanceThreshold={0.2}
+                            mipmapBlur
+                            intensity={1.2}
+                            radius={0.4}
+                        />
+                    </EffectComposer>
 
                     <LoadedTrigger onLoaded={() => setIsLoaded(true)} />
 

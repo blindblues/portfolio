@@ -11,6 +11,20 @@ import PortfolioContent from "../components/PortfolioContent.tsx";
 	<main>
 		<div id="intro-container">
 			<Scene3D client:only="react" />
+			<div id="scroll-arrow">
+				<svg
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M7 10l5 5 5-5"></path>
+				</svg>
+			</div>
 		</div>
 		<div id="content-container" style="opacity: 0; pointer-events: none;">
 			<PortfolioContent client:only="react" />
@@ -19,62 +33,94 @@ import PortfolioContent from "../components/PortfolioContent.tsx";
 </Layout>
 
 <script>
+	import { gsap } from "gsap";
+
 	// Force scroll to top on reload and disable scrolling during intro
 	if (typeof history !== "undefined" && "scrollRestoration" in history) {
 		history.scrollRestoration = "manual";
 	}
 	window.scrollTo(0, 0);
+	document.documentElement.style.overflow = "hidden";
 	document.body.style.overflow = "hidden";
 
-	let transitionTimeout: any;
+	let isTransitioned = false;
 
-	function performTransition(isSkip = false) {
-		if (transitionTimeout) clearTimeout(transitionTimeout);
+	function performTransition() {
+		if (isTransitioned) return;
+		isTransitioned = true;
 
 		const intro = document.getElementById("intro-container");
-		const sceneWrapper = document.getElementById("scene-3d-wrapper");
 		const content = document.getElementById("content-container");
 
-		if (intro && sceneWrapper && content) {
-			// Re-enable scrolling and pointer events
-			document.body.style.overflow = "auto";
-			content.style.pointerEvents = "auto";
+		if (intro && content) {
+			// Don't enable scroll yet, just reveal content opacity
+			content.style.opacity = "1";
 
-			if (isSkip) {
-				// Immediate switch if clicked
-				intro.remove();
-				content.style.opacity = "1";
-				window.dispatchEvent(new CustomEvent("modelMoveUpStart"));
-			} else {
-				// 1. Reveal content container by setting opacity (it's already mounted)
-				content.style.transition = "opacity 1s ease-in";
-				content.style.opacity = "1";
+			// Hide arrow
+			const arrow = document.getElementById("scroll-arrow");
+			if (arrow) gsap.to(arrow, { opacity: 0, duration: 0.3 });
 
-				// 2. Fade out black background of the ASCII scene to reveal the content
-				sceneWrapper.style.backgroundColor = "transparent";
-
-				intro.style.pointerEvents = "none";
-				window.dispatchEvent(new CustomEvent("modelMoveUpStart"));
-
-				// 3. Start ASCII character disintegration effect
-				window.dispatchEvent(new CustomEvent("asciiDisintegrate"));
-
-				// 4. Remove the intro container after the effect finishes (approx 1s)
-				setTimeout(() => {
+			// Swipe Reveal Animation
+			const tl = gsap.timeline({
+				onComplete: () => {
+					// Re-enable scrolling and pointer events ONLY when intro is gone
+					document.documentElement.style.overflow = "auto";
+					document.body.style.overflow = "auto";
+					content.style.pointerEvents = "auto";
 					intro.remove();
-				}, 1500);
-			}
+				},
+			});
+
+			window.dispatchEvent(new CustomEvent("modelMoveUpStart"));
+
+			tl.to(intro, {
+				yPercent: -100,
+				duration: 1.5,
+				ease: "expo.inOut",
+			});
 		}
 	}
 
-	// Wait 6.5 seconds before starting the background fade
-	transitionTimeout = setTimeout(() => performTransition(false), 6500);
+	// Trigger transition on first scroll or click
+	window.addEventListener(
+		"wheel",
+		(e) => {
+			if (e.deltaY > 5) performTransition();
+		},
+		{ passive: true },
+	);
+
+	window.addEventListener(
+		"touchstart",
+		(e) => {
+			const startY = e.touches[0].pageY;
+			const handleTouchMove = (moveEvent: TouchEvent) => {
+				if (startY - moveEvent.touches[0].pageY > 10) {
+					performTransition();
+					window.removeEventListener("touchmove", handleTouchMove);
+				}
+			};
+			window.addEventListener("touchmove", handleTouchMove, {
+				passive: true,
+			});
+		},
+		{ passive: true },
+	);
 
 	const introDiv = document.getElementById("intro-container");
 	if (introDiv) {
-		introDiv.addEventListener("click", () => performTransition(true));
+		introDiv.addEventListener("click", () => performTransition());
 		introDiv.style.cursor = "pointer";
 	}
+
+	// Floating arrow animation
+	gsap.to("#scroll-arrow", {
+		y: 10,
+		duration: 1.5,
+		repeat: -1,
+		yoyo: true,
+		ease: "power1.inOut",
+	});
 </script>
 
 <style is:global>
@@ -84,6 +130,19 @@ import PortfolioContent from "../components/PortfolioContent.tsx";
 		z-index: 100;
 		width: 100%;
 		height: 100vh;
+		background: #000;
+		overflow: hidden;
+	}
+
+	#scroll-arrow {
+		position: absolute;
+		bottom: 40px;
+		left: 50%;
+		transform: translateX(-50%);
+		color: #ffffff;
+		z-index: 102;
+		opacity: 0.6;
+		pointer-events: none;
 	}
 
 	main {

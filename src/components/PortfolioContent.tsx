@@ -316,33 +316,38 @@ export default function PortfolioContent() {
                     </div>
                 </header>
 
-                <nav
-                    ref={tabsRef}
-                    className="w-full flex justify-center items-center transition-all duration-300 ease-out pb-2 pointer-events-none"
-                    style={{
-                        paddingTop: `${1.5 - (scrollProgress * 1)}rem`,
-                        marginTop: `0rem`
-                    }}
-                >
-                    <div className={`flex items-center transition-all duration-500 ease-in-out pointer-events-auto rounded-full ${isScrolled
+            </div>
+
+            <nav
+                ref={tabsRef}
+                className="fixed left-0 w-full z-[60] flex justify-center items-center pointer-events-none"
+                style={{
+                    // Match original position: header height + 1.5rem padding, adjusted by scrollProgress
+                    top: `calc(${(windowWidth < 768 ? 18 : 30)}vh + 1.5rem - ${(scrollProgress * (windowWidth < 768 ? 4 : 15.8))}vh)`,
+                    // Move to bottom: 0 to ~80vh depending on device
+                    transform: `translateY(${scrollProgress * (windowWidth < 768 ? 72 : 78)}vh)`
+                }}
+            >
+                <div
+                    className={`flex items-center transition-all duration-500 ease-in-out pointer-events-auto rounded-full ${isScrolled
                         ? 'bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.9)] gap-6 md:gap-10 px-4 py-2'
                         : 'bg-transparent border-transparent shadow-none gap-8 md:gap-14 px-6 py-3'
-                        }`}>
-                        {categories.map((cat) => (
-                            <p
-                                key={cat}
-                                onClick={() => setActiveTab(cat)}
-                                className={`cursor-pointer whitespace-nowrap text-[9px] md:text-xs font-black tracking-[0.2em] transition-all duration-300 ${activeTab === cat
-                                    ? 'text-white opacity-100 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]'
-                                    : 'text-white/40 hover:text-white/70'
-                                    }`}
-                            >
-                                {cat}
-                            </p>
-                        ))}
-                    </div>
-                </nav>
-            </div>
+                        }`}
+                >
+                    {categories.map((cat) => (
+                        <p
+                            key={cat}
+                            onClick={() => setActiveTab(cat)}
+                            className={`cursor-pointer whitespace-nowrap text-[9px] md:text-xs font-black tracking-[0.2em] transition-all duration-300 ${activeTab === cat
+                                ? 'text-white opacity-100 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]'
+                                : 'text-white/40 hover:text-white/70'
+                                }`}
+                        >
+                            {cat}
+                        </p>
+                    ))}
+                </div>
+            </nav>
 
             {/* SPACER FOR FIXED HEADER */}
             <div className={`transition-[height] duration-300 ${windowWidth < 768 ? 'h-[20vh]' : 'h-[32vh]'}`} />
