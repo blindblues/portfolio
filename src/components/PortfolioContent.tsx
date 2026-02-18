@@ -152,8 +152,24 @@ export default function PortfolioContent() {
     const isInitialLoad = useRef(true);
     const headerRef = useRef<HTMLElement>(null);
     const tabsRef = useRef<HTMLElement>(null);
+    const blurCircleRef = useRef<HTMLDivElement>(null);
     const [isScrolled, setIsScrolled] = useState(false);
     const [scrollProgress, setScrollProgress] = useState(0);
+
+    // Breathing animation for the blurred circle
+    useLayoutEffect(() => {
+        if (!blurCircleRef.current) return;
+
+        gsap.set(blurCircleRef.current, { xPercent: -50, yPercent: -50 });
+
+        gsap.to(blurCircleRef.current, {
+            scale: 1.15,
+            duration: 4,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut"
+        });
+    }, []);
     const scrollRef = useRef(0);
 
     const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 1000);
@@ -267,7 +283,7 @@ export default function PortfolioContent() {
     if (!isVisible) return null;
 
     return (
-        <div ref={containerRef} className="portfolio-content-wrapper w-full bg-black text-white font-sans selection:bg-blue-500/30">
+        <div ref={containerRef} className="portfolio-content-wrapper w-full bg-black text-white selection:bg-blue-500/30" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
             {/* 1 & 2. FIXED TOP SECTION (Header + Tabs) */}
             <div
                 className="fixed top-0 left-0 w-full z-50 pointer-events-none transition-transform duration-300 ease-out"
@@ -285,6 +301,24 @@ export default function PortfolioContent() {
                         className="w-full h-[50vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none [&_canvas]:!pointer-events-none"
                         style={{ pointerEvents: 'none' }}
                     >
+                        {/* Blurred Circle Background */}
+                        <div
+                            ref={blurCircleRef}
+                            className="absolute pointer-events-none"
+                            style={{
+                                top: '53%',
+                                left: '50%',
+                                width: windowWidth < 768 ? '45vh' : '55vh',
+                                height: windowWidth < 768 ? '45vh' : '55vh',
+                                background: 'transparent',
+                                backdropFilter: 'blur(40px)',
+                                WebkitBackdropFilter: 'blur(40px)',
+                                // The mask DEFINES the shape and feathered edges
+                                maskImage: 'radial-gradient(circle, black 0%, transparent 65%)',
+                                WebkitMaskImage: 'radial-gradient(circle, black 0%, transparent 65%)',
+                                zIndex: 0
+                            }}
+                        />
                         <Suspense fallback={null}>
                             <Canvas
                                 className="!pointer-events-none"
