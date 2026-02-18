@@ -152,6 +152,7 @@ export default function PortfolioContent() {
         window.scrollTo({ top: 0, behavior: 'instant' });
     }, [activeTab]);
     const containerRef = useRef<HTMLDivElement>(null);
+    const modalOverlayRef = useRef<HTMLDivElement>(null);
     const modalContainerRef = useRef<HTMLDivElement>(null);
     const lightRef = useRef<HTMLDivElement>(null);
     const touchStartPos = useRef({ x: 0, y: 0 });
@@ -218,9 +219,7 @@ export default function PortfolioContent() {
 
 
 
-    // Entrance animations removed as requested
-
-    // 3D Tilt Logic for Modal
+    // 3D Tilt Logic for Modal (Desktop)
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!modalContainerRef.current) return;
         // If touch was detected recently, ignore mouse move to prevent conflict
@@ -236,45 +235,14 @@ export default function PortfolioContent() {
             duration: 0.5,
             ease: "power2.out",
             transformPerspective: 1000,
-            transformOrigin: "center"
+            transformOrigin: "center",
+            force3D: true
         });
 
         if (lightRef.current) {
             const rect = modalContainerRef.current.getBoundingClientRect();
             const localX = e.clientX - rect.left;
             const localY = e.clientY - rect.top;
-            lightRef.current.style.background = `radial-gradient(circle 400px at ${localX}px ${localY}px, rgba(255,255,255,0.4), transparent 100%)`;
-        }
-    };
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-        isTouchRef.current = true;
-        const touch = e.touches[0];
-        touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (!modalContainerRef.current) return;
-        const touch = e.touches[0];
-        // Increased sensitivity for mobile feel
-        const deltaX = ((touch.clientX - touchStartPos.current.x) / window.innerWidth) * 3; // Boosted sensitivity
-        const deltaY = ((touch.clientY - touchStartPos.current.y) / window.innerHeight) * 3;
-
-        gsap.to(modalContainerRef.current, {
-            rotationY: deltaX * 8,
-            rotationX: -deltaY * 8,
-            scale: 1, // No scaling on mobile
-            duration: 0.1,
-            ease: "power1.out",
-            transformPerspective: 1000,
-            transformOrigin: "center",
-            overwrite: "auto"
-        });
-
-        if (lightRef.current) {
-            const rect = modalContainerRef.current.getBoundingClientRect();
-            const localX = touch.clientX - rect.left;
-            const localY = touch.clientY - rect.top;
             lightRef.current.style.background = `radial-gradient(circle 400px at ${localX}px ${localY}px, rgba(255,255,255,0.4), transparent 100%)`;
         }
     };
@@ -287,6 +255,61 @@ export default function PortfolioContent() {
         // Reset touch flag after a delay to allow mouse back
         setTimeout(() => { isTouchRef.current = false; }, 500);
     };
+
+    // Fix for Android touch rotation: Use native listeners to allow e.preventDefault()
+    useEffect(() => {
+        const overlay = modalOverlayRef.current;
+        if (!overlay || !selectedImage) return;
+
+        const handleStart = (e: TouchEvent) => {
+            isTouchRef.current = true;
+            const touch = e.touches[0];
+            touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+        };
+
+        const handleMove = (e: TouchEvent) => {
+            if (!modalContainerRef.current) return;
+            // Crucial for Android: prevent scroll to keep touch events alive
+            if (e.cancelable) e.preventDefault();
+
+            const touch = e.touches[0];
+            const deltaX = ((touch.clientX - touchStartPos.current.x) / window.innerWidth) * 3;
+            const deltaY = ((touch.clientY - touchStartPos.current.y) / window.innerHeight) * 3;
+
+            gsap.to(modalContainerRef.current, {
+                rotationY: deltaX * 10,
+                rotationX: -deltaY * 10,
+                scale: 1, // No scaling on mobile
+                duration: 0.1,
+                ease: "power1.out",
+                transformPerspective: 1000,
+                transformOrigin: "center",
+                overwrite: "auto",
+                force3D: true
+            });
+
+            if (lightRef.current) {
+                const rect = modalContainerRef.current.getBoundingClientRect();
+                const localX = touch.clientX - rect.left;
+                const localY = touch.clientY - rect.top;
+                lightRef.current.style.background = `radial-gradient(circle 400px at ${localX}px ${localY}px, rgba(255,255,255,0.4), transparent 100%)`;
+            }
+        };
+
+        const handleEnd = () => {
+            handleMouseLeave();
+        };
+
+        overlay.addEventListener('touchstart', handleStart, { passive: true });
+        overlay.addEventListener('touchmove', handleMove, { passive: false });
+        overlay.addEventListener('touchend', handleEnd, { passive: true });
+
+        return () => {
+            overlay.removeEventListener('touchstart', handleStart);
+            overlay.removeEventListener('touchmove', handleMove);
+            overlay.removeEventListener('touchend', handleEnd);
+        };
+    }, [selectedImage]);
 
     if (!isVisible) return null;
 
@@ -432,16 +455,14 @@ export default function PortfolioContent() {
             {/* MODAL OVERLAY */}
             {selectedImage && (
                 <div
+                    ref={modalOverlayRef}
                     className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10 animate-fade-in touch-none"
                     onClick={() => setSelectedImage(null)}
                     onMouseMove={handleMouseMove}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={() => handleMouseLeave()}
                 >
                     <div
                         ref={modalContainerRef}
-                        className="relative rounded-lg overflow-hidden shadow-2xl inline-block touch-none"
+                        className="relative rounded-lg overflow-hidden shadow-2xl inline-block touch-none will-change-transform"
                         style={{ transformStyle: 'preserve-3d' }}
                         onClick={(e) => e.stopPropagation()}
                     >
