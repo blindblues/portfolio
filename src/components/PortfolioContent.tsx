@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, Suspense } from 'react';
-import { X } from 'lucide-react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { useGLTF, useAnimations, useTexture, AdaptiveDpr, Preload } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -8,9 +7,8 @@ import gsap from 'gsap';
 
 const BASE_PATH = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, "");
 
-function MiniModel({ scrollProgress }: { scrollProgress: number }) {
+const MiniModel = React.memo(function MiniModel({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
     const { scene, animations } = useGLTF(`${BASE_PATH}/3d/Blowed2.glb`);
-    // Use useMemo to clone the scene so this instance is independent from the intro
     const clonedScene = React.useMemo(() => scene.clone(), [scene]);
     const { actions } = useAnimations(animations, clonedScene);
     const { scene: canvasScene } = useThree();
@@ -52,17 +50,16 @@ function MiniModel({ scrollProgress }: { scrollProgress: number }) {
 
     useFrame((state, delta) => {
         if (modelRef.current) {
-            // Calculate target scale based on scrollProgress (0 to 1)
-            // Now shrinks from 1.4 to 1.1 (instead of 0.8) to stay more visible
-            const target = 1.4 - (scrollProgress * 0.3);
-            // Secondary lerp for extra smoothness
+            // Read mostly current scroll value from ref without re-render
+            const progress = scrollRef.current;
+            const target = 1.4 - (progress * 0.3);
             const s = THREE.MathUtils.lerp(modelRef.current.scale.x, target, 0.1);
             modelRef.current.scale.set(s, s, s);
         }
     });
 
     return <primitive ref={modelRef} object={clonedScene} position={[0, -1, 0]} />;
-}
+});
 
 
 // --- MAIN PORTFOLIO CONTENT ---
@@ -147,6 +144,7 @@ export default function PortfolioContent() {
     const tabsRef = useRef<HTMLElement>(null);
     const [isScrolled, setIsScrolled] = useState(false);
     const [scrollProgress, setScrollProgress] = useState(0);
+    const scrollRef = useRef(0);
 
     const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 1000);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -175,6 +173,7 @@ export default function PortfolioContent() {
             // Progress from 0 to 1 over 300px with smooth precision
             const progress = Math.min(Math.max(scrollY / 300, 0), 1);
             setScrollProgress(progress);
+            scrollRef.current = progress;
         };
         // Add passive listener for better scroll performance
         window.addEventListener('scroll', handleScroll, { passive: true });
@@ -334,7 +333,7 @@ export default function PortfolioContent() {
                                 <pointLight position={[-10, -15, -10]} intensity={100} color="#0033ff" />
                                 <spotLight position={[0, 40, 0]} intensity={500} color="#0099ff" distance={100} angle={0.5} />
 
-                                <MiniModel scrollProgress={scrollProgress} />
+                                <MiniModel scrollRef={scrollRef} />
 
                                 <EffectComposer>
                                     <Bloom

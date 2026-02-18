@@ -37,7 +37,7 @@ import PortfolioContent from "../components/PortfolioContent.tsx";
 		if (intro && content && intro.style.display !== "none") {
 			if (isSkip) {
 				// Immediate switch if clicked
-				intro.style.display = "none";
+				intro.remove();
 				content.classList.remove("hidden");
 				content.style.opacity = "1";
 			} else {
@@ -50,7 +50,7 @@ import PortfolioContent from "../components/PortfolioContent.tsx";
 				content.style.transition = "opacity 1.5s ease-in";
 
 				setTimeout(() => {
-					intro.style.display = "none";
+					intro.remove();
 					content.style.opacity = "1";
 				}, 1500);
 			}
