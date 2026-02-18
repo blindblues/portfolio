@@ -274,8 +274,8 @@ export default function PortfolioContent() {
         const deltaY = ((touch.clientY - touchStartPos.current.y) / window.innerHeight) * 3;
 
         gsap.to(modalContainerRef.current, {
-            rotationY: deltaX * 45,
-            rotationX: -deltaY * 45,
+            rotationY: deltaX * 8,
+            rotationX: -deltaY * 8,
             scale: 1.1, // More obvious scale effect
             duration: 0.1, // Faster response
             ease: "power1.out",
