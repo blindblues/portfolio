@@ -238,7 +238,10 @@ export default function PortfolioContent() {
 
     // 3D Tilt Logic for Modal
     const handleMouseMove = (e: React.MouseEvent) => {
-        if (!modalContainerRef.current || isTouchRef.current) return;
+        if (!modalContainerRef.current) return;
+        // If touch was detected recently, ignore mouse move to prevent conflict
+        if (isTouchRef.current) return;
+
         const xPct = (e.clientX / window.innerWidth) - 0.5;
         const yPct = (e.clientY / window.innerHeight) - 0.5;
 
@@ -276,8 +279,8 @@ export default function PortfolioContent() {
         gsap.to(modalContainerRef.current, {
             rotationY: deltaX * 8,
             rotationX: -deltaY * 8,
-            scale: 1.1, // More obvious scale effect
-            duration: 0.1, // Faster response
+            scale: 1, // No scaling on mobile
+            duration: 0.1,
             ease: "power1.out",
             transformPerspective: 1000,
             transformOrigin: "center",
@@ -296,6 +299,9 @@ export default function PortfolioContent() {
         if (!modalContainerRef.current) return;
         gsap.to(modalContainerRef.current, { rotationY: 0, rotationX: 0, scale: 1, duration: 0.5, ease: "power2.out" });
         if (lightRef.current) lightRef.current.style.background = 'transparent';
+
+        // Reset touch flag after a delay to allow mouse back
+        setTimeout(() => { isTouchRef.current = false; }, 500);
     };
 
     if (!isVisible) return null;
