@@ -204,8 +204,8 @@ export default function PortfolioContent() {
                 return;
             }
 
-            // Progress from 0 to 1 over 300px with smooth precision
-            const progress = Math.min(Math.max(scrollY / 300, 0), 1);
+            // Progress from 0 to 1 over 150px with smooth precision (faster transition)
+            const progress = Math.min(Math.max(scrollY / 150, 0), 1);
             setScrollProgress(progress);
             scrollRef.current = progress;
         };
