@@ -139,6 +139,11 @@ export default function PortfolioContent() {
 
     const [isVisible, setIsVisible] = useState(true);
     const [selectedImage, setSelectedImage] = useState<typeof graphicDesignImages[0] | null>(null);
+
+    // Reset scroll to top when category changes
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }, [activeTab]);
     const containerRef = useRef<HTMLDivElement>(null);
     const modalContainerRef = useRef<HTMLDivElement>(null);
     const lightRef = useRef<HTMLDivElement>(null);
@@ -324,8 +329,8 @@ export default function PortfolioContent() {
                 style={{
                     // Match original position: header height + 1.5rem padding, adjusted by scrollProgress
                     top: `calc(${(windowWidth < 768 ? 18 : 30)}vh + 1.5rem - ${(scrollProgress * (windowWidth < 768 ? 4 : 15.8))}vh)`,
-                    // Move to bottom: 0 to ~80vh depending on device
-                    transform: `translateY(${scrollProgress * (windowWidth < 768 ? 72 : 78)}vh)`
+                    // Move to bottom: on mobile we stop a bit higher (e.g. 82vh total instead of 90vh) to avoid browser bars
+                    transform: `translateY(${scrollProgress * (windowWidth < 768 ? 64 : 78)}vh)`
                 }}
             >
                 <div
@@ -353,7 +358,7 @@ export default function PortfolioContent() {
             <div className={`transition-[height] duration-300 ${windowWidth < 768 ? 'h-[20vh]' : 'h-[32vh]'}`} />
 
             {/* 3. GRIGLIA IMMAGINI */}
-            <section className="w-full px-4 py-12 pb-32">
+            <section className="w-full px-4 py-12 pb-40 md:pb-32">
                 <div className="flex flex-row gap-4 mx-auto max-w-[1920px]">
                     {[...Array(windowWidth < 768 ? 2 : 4)].map((_, colIndex) => (
                         <div
