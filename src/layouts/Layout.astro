@@ -26,6 +26,14 @@ const { title, description = "3D View" } = Astro.props;
 			href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap"
 			rel="stylesheet"
 		/>
+		{/* Preload critical 3D assets */}
+		<link
+			rel="preload"
+			href="/3d/Blowed2.glb"
+			as="fetch"
+			crossorigin="anonymous"
+		/>
+		<link rel="preload" href="/3d/environment.webp" as="image" />
 		<title>{title}</title>
 	</head>
 	<body>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { useGLTF, useAnimations, useTexture, AdaptiveDpr, Preload, Center } from '@react-three/drei';
+import { useGLTF, useAnimations, useTexture, AdaptiveDpr, Preload, Center, AdaptiveEvents, BakeShadows } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -364,6 +364,7 @@ export default function PortfolioContent() {
                                 }}
                             >
                                 <AdaptiveDpr pixelated />
+                                <AdaptiveEvents />
 
                                 <ambientLight intensity={0.2} color="#001144" />
                                 <pointLight position={[10, 15, 10]} intensity={200} color="#0066ff" />
@@ -373,6 +374,7 @@ export default function PortfolioContent() {
                                 <MiniModel scrollRef={scrollRef} isMobile={windowWidth < 768} />
 
                                 <EffectComposer>
+                                    <BakeShadows />
                                     <Bloom
                                         luminanceThreshold={0.2}
                                         mipmapBlur
@@ -439,11 +441,24 @@ export default function PortfolioContent() {
                                         className="grid-item relative group overflow-hidden rounded-2xl bg-zinc-900"
                                     >
                                         <img
-                                            src={img.src}
+                                            src={`${img.src.split('?')[0]}?auto=format&fit=crop&q=70&w=${windowWidth < 768 ? 400 : 700}`}
                                             alt="Portfolio Work"
                                             className="w-full h-auto object-cover cursor-pointer"
                                             onClick={() => setSelectedImage(img)}
+                                            onMouseEnter={() => {
+                                                // Prefetch high-res version on hover
+                                                const link = document.createElement('link');
+                                                link.rel = 'prefetch';
+                                                link.href = `${img.src.split('?')[0]}?auto=format&fit=contain&q=90&w=1600`;
+                                                document.head.appendChild(link);
+                                            }}
+                                            onTouchStart={() => {
+                                                // Prefetch for mobile
+                                                const imgPreload = new Image();
+                                                imgPreload.src = `${img.src.split('?')[0]}?auto=format&fit=contain&q=90&w=1600`;
+                                            }}
                                             loading="lazy"
+                                            decoding="async"
                                         />
                                     </div>
                                 ))}
@@ -471,9 +486,11 @@ export default function PortfolioContent() {
                             className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay transition-opacity duration-200"
                         />
                         <img
-                            src={selectedImage.src}
+                            src={`${selectedImage.src.split('?')[0]}?auto=format&fit=contain&q=90&w=1600`}
                             alt="Selected Work"
                             className="max-w-[90vw] max-h-[85vh] w-auto h-auto object-contain block pointer-events-none relative z-10"
+                            decoding="async"
+                            {...({ fetchpriority: "high" } as any)}
                         />
                     </div>
 

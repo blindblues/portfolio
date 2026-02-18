@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations, useTexture, Float, AdaptiveDpr, Preload, Center } from '@react-three/drei';
+import { useGLTF, useAnimations, useTexture, Float, AdaptiveDpr, Preload, Center, AdaptiveEvents, BakeShadows } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -137,6 +137,8 @@ export default function Scene3D() {
                     }}
                 >
                     <AdaptiveDpr pixelated />
+                    <AdaptiveEvents />
+                    <BakeShadows />
                     <SceneSetup />
 
                     <ambientLight intensity={0.2} color="#001144" />
