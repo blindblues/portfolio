@@ -147,42 +147,57 @@ export default function PortfolioContent() {
     const [isVisible, setIsVisible] = useState(true);
     const [selectedImage, setSelectedImage] = useState<typeof graphicDesignImages[0] | null>(null);
 
-    // Reset scroll to top when category changes - enhanced for iOS/iPhone and mobile Chrome
+    const isResettingRef = useRef(false);
+
+    // Reset scroll to top when category changes - aggressive "Momentum Kill" for iOS
     useEffect(() => {
+        isResettingRef.current = true;
+
         // Force immediate UI reset
         setScrollProgress(0);
         scrollRef.current = 0;
 
-        const resetScroll = () => {
+        const killMomentumAndReset = () => {
             const html = document.documentElement;
             const body = document.body;
 
-            // Temporary disable smooth scroll
+            // 1. Disable smooth scrolling
             const originalScrollBehavior = html.style.scrollBehavior;
             html.style.scrollBehavior = 'auto';
             body.style.scrollBehavior = 'auto';
 
+            // 2. Briefly kill overflow (stops iOS inertia dead)
+            const originalOverflow = body.style.overflow;
+            body.style.overflow = 'hidden';
+
+            // 3. Perform multiple scroll commands for safety
             window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
             html.scrollTop = 0;
             body.scrollTop = 0;
 
-            // Restore after a frame
-            requestAnimationFrame(() => {
+            // 4. Restore state
+            setTimeout(() => {
+                body.style.overflow = originalOverflow || '';
                 html.style.scrollBehavior = originalScrollBehavior;
                 body.style.scrollBehavior = originalScrollBehavior;
-            });
+            }, 10);
         };
 
-        // Initial reset
-        resetScroll();
+        // Execute reset sequence
+        killMomentumAndReset();
 
-        // Sequence of resets to combat iOS scroll inertia (rubber-banding)
-        const timeouts = [10, 50, 100, 200].map(ms => setTimeout(resetScroll, ms));
-        const rafId = requestAnimationFrame(resetScroll);
+        // Follow up resets to handle late-firing iOS inertia events
+        const timeouts = [50, 100, 300].map(ms => setTimeout(killMomentumAndReset, ms));
+
+        // Unlock scroll handler after 400ms when we are certain inertia has stopped
+        const unlockTimeout = setTimeout(() => {
+            isResettingRef.current = false;
+        }, 400);
 
         return () => {
-            cancelAnimationFrame(rafId);
             timeouts.forEach(clearTimeout);
+            clearTimeout(unlockTimeout);
         };
     }, [activeTab]);
 
@@ -257,11 +272,13 @@ export default function PortfolioContent() {
 
     useEffect(() => {
         const handleScroll = () => {
+            if (isResettingRef.current) return; // Ignore events during reset
+
             const scrollY = window.scrollY;
             setIsScrolled(scrollY > 50);
 
             // Ensure exact 0 when at top
-            if (scrollY === 0) {
+            if (scrollY <= 5) {
                 setScrollProgress(0);
                 return;
             }
