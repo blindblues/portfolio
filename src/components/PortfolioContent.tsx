@@ -147,108 +147,10 @@ export default function PortfolioContent() {
     const [isVisible, setIsVisible] = useState(true);
     const [selectedImage, setSelectedImage] = useState<typeof graphicDesignImages[0] | null>(null);
 
-    const isResettingRef = useRef(false);
-
-    // Reset scroll to top when category changes - aggressive "Momentum Kill" for iOS
+    // Reset scroll to top when category changes
     useEffect(() => {
-        isResettingRef.current = true;
-
-        // Force immediate UI reset
-        setScrollProgress(0);
-        scrollRef.current = 0;
-
-        const killMomentumAndReset = () => {
-            const html = document.documentElement;
-            const body = document.body;
-
-            // 1. Disable smooth scrolling
-            const originalScrollBehavior = html.style.scrollBehavior;
-            html.style.scrollBehavior = 'auto';
-            body.style.scrollBehavior = 'auto';
-
-            // 2. Briefly kill overflow (stops iOS inertia dead)
-            const originalOverflow = body.style.overflow;
-            body.style.overflow = 'hidden';
-
-            // 3. Perform multiple scroll commands for safety
-            window.scrollTo(0, 0);
-            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-            html.scrollTop = 0;
-            body.scrollTop = 0;
-
-            // 4. Restore state
-            setTimeout(() => {
-                body.style.overflow = originalOverflow || '';
-                html.style.scrollBehavior = originalScrollBehavior;
-                body.style.scrollBehavior = originalScrollBehavior;
-            }, 10);
-        };
-
-        // Execute reset sequence
-        killMomentumAndReset();
-
-        // Follow up resets to handle late-firing iOS inertia events
-        const timeouts = [50, 100, 300].map(ms => setTimeout(killMomentumAndReset, ms));
-
-        // Unlock scroll handler after 400ms when we are certain inertia has stopped
-        const unlockTimeout = setTimeout(() => {
-            isResettingRef.current = false;
-        }, 400);
-
-        return () => {
-            timeouts.forEach(clearTimeout);
-            clearTimeout(unlockTimeout);
-        };
+        window.scrollTo({ top: 0, behavior: 'instant' });
     }, [activeTab]);
-
-    const wasModalOpen = useRef(false);
-
-    // Lock body scroll when modal is open and restore correctly
-    useEffect(() => {
-        const html = document.documentElement;
-        const body = document.body;
-
-        if (selectedImage) {
-            const scrollY = window.scrollY;
-            isModalOpenRef.current = true; // Pin the scroll UI state
-            body.style.position = 'fixed';
-            body.style.top = `-${scrollY}px`;
-            body.style.width = '100%';
-            body.style.overflow = 'hidden';
-            wasModalOpen.current = true;
-        } else if (wasModalOpen.current) {
-            const scrollPosition = parseInt(body.style.top || '0') * -1;
-
-            // Restore styles
-            body.style.position = '';
-            body.style.top = '';
-            body.style.width = '';
-            body.style.overflow = '';
-
-            // Temporary disable smooth scroll for instant restoration
-            const originalScrollBehavior = html.style.scrollBehavior;
-            html.style.scrollBehavior = 'auto';
-
-            window.scrollTo(0, scrollPosition);
-
-            // Restore smooth scroll after a frame
-            requestAnimationFrame(() => {
-                html.style.scrollBehavior = originalScrollBehavior;
-                isModalOpenRef.current = false; // Unpin UI state after restoration
-            });
-
-            wasModalOpen.current = false;
-        }
-
-        return () => {
-            if (selectedImage) {
-                body.style.position = '';
-                body.style.top = '';
-                body.style.width = '';
-                body.style.overflow = '';
-            }
-        };
-    }, [selectedImage]);
     const containerRef = useRef<HTMLDivElement>(null);
     const modalOverlayRef = useRef<HTMLDivElement>(null);
     const modalContainerRef = useRef<HTMLDivElement>(null);
@@ -292,17 +194,13 @@ export default function PortfolioContent() {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const isModalOpenRef = useRef(false);
-
     useEffect(() => {
         const handleScroll = () => {
-            if (isResettingRef.current || isModalOpenRef.current) return; // Ignore events during reset or while modal is open
-
             const scrollY = window.scrollY;
             setIsScrolled(scrollY > 50);
 
             // Ensure exact 0 when at top
-            if (scrollY <= 5) {
+            if (scrollY === 0) {
                 setScrollProgress(0);
                 return;
             }
@@ -420,11 +318,7 @@ export default function PortfolioContent() {
             {/* 1 & 2. FIXED TOP SECTION (Header + Tabs) */}
             <div
                 className="fixed top-0 left-0 w-full z-50 pointer-events-none transition-transform duration-300 ease-out"
-                style={{
-                    transform: `translateY(-${scrollProgress * 0.8}vh)`,
-                    pointerEvents: 'none',
-                    willChange: 'transform'
-                }}
+                style={{ transform: `translateY(-${scrollProgress * 0.8}vh)`, pointerEvents: 'none' }}
             >
                 <header
                     ref={headerRef}
@@ -577,8 +471,7 @@ export default function PortfolioContent() {
             {selectedImage && (
                 <div
                     ref={modalOverlayRef}
-                    className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-4 md:p-10 animate-fade-in touch-none"
-                    style={{ height: '100dvh' }}
+                    className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10 animate-fade-in touch-none"
                     onClick={() => setSelectedImage(null)}
                     onMouseMove={handleMouseMove}
                 >
