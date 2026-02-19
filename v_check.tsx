@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { useGLTF, useAnimations, useTexture, AdaptiveDpr, Preload, Center, AdaptiveEvents, BakeShadows } from '@react-three/drei';
+import { useGLTF, useAnimations, useTexture, AdaptiveDpr, Preload } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -56,20 +56,13 @@ const MiniModel = React.memo(function MiniModel({ scrollRef, isMobile }: { scrol
             const s = THREE.MathUtils.lerp(modelRef.current.scale.x, target, 0.1);
             modelRef.current.scale.set(s, s, s);
 
-            // Move model up slightly when scrolling - Abbassato il target finale
-            const targetY = -1.8 + (progress * 0.2);
+            // Move model up slightly when scrolling
+            const targetY = -1.8 + (progress * 0.8);
             modelRef.current.position.y = THREE.MathUtils.lerp(modelRef.current.position.y, targetY, 0.1);
         }
     });
 
-    return (
-        <primitive
-            ref={modelRef}
-            object={clonedScene}
-            position={[0, -1.8, 0]}
-            scale={[1.4, 1.4, 1.4]}
-        />
-    );
+    return <primitive ref={modelRef} object={clonedScene} position={[0, -1.8, 0]} scale={[1.4, 1.4, 1.4]} />;
 });
 
 
@@ -147,9 +140,11 @@ export default function PortfolioContent() {
     const [isVisible, setIsVisible] = useState(true);
     const [selectedImage, setSelectedImage] = useState<typeof graphicDesignImages[0] | null>(null);
 
-    // Category change now handled directly in onClick for better scroll synchronization
+    // Reset scroll to top when category changes
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }, [activeTab]);
     const containerRef = useRef<HTMLDivElement>(null);
-    const modalOverlayRef = useRef<HTMLDivElement>(null);
     const modalContainerRef = useRef<HTMLDivElement>(null);
     const lightRef = useRef<HTMLDivElement>(null);
     const touchStartPos = useRef({ x: 0, y: 0 });
@@ -160,16 +155,11 @@ export default function PortfolioContent() {
     const blurCircleRef = useRef<HTMLDivElement>(null);
     const [isScrolled, setIsScrolled] = useState(false);
     const [scrollProgress, setScrollProgress] = useState(0);
-    const isManualScrolling = useRef(false);
-    const scrollRef = useRef(0);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 1000);
 
     // Breathing animation for the blurred circle
     useLayoutEffect(() => {
         if (!blurCircleRef.current) return;
 
-        // Restore centering from commit 67ea5ea
         gsap.set(blurCircleRef.current, { xPercent: -50, yPercent: -50 });
 
         gsap.to(blurCircleRef.current, {
@@ -180,6 +170,10 @@ export default function PortfolioContent() {
             ease: "sine.inOut"
         });
     }, []);
+    const scrollRef = useRef(0);
+
+    const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 1000);
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
     useEffect(() => {
         const handleResize = () => {
@@ -194,21 +188,16 @@ export default function PortfolioContent() {
     useEffect(() => {
         const handleScroll = () => {
             const scrollY = window.scrollY;
+            setIsScrolled(scrollY > 50);
 
-            // If we are very close to the top, always force reset and unlock
-            if (scrollY <= 10) {
-                isManualScrolling.current = false;
-                setIsScrolled(false);
+            // Ensure exact 0 when at top
+            if (scrollY === 0) {
                 setScrollProgress(0);
-                scrollRef.current = 0;
                 return;
             }
 
-            // During manual scroll (back to top), we only update if we haven't reached the top zone
-            if (isManualScrolling.current) return;
-
-            setIsScrolled(scrollY > 5);
-            const progress = Math.min(Math.max(scrollY / 150, 0), 1);
+            // Progress from 0 to 1 over 300px with smooth precision
+            const progress = Math.min(Math.max(scrollY / 300, 0), 1);
             setScrollProgress(progress);
             scrollRef.current = progress;
         };
@@ -221,7 +210,9 @@ export default function PortfolioContent() {
 
 
 
-    // 3D Tilt Logic for Modal (Desktop)
+    // Entrance animations removed as requested
+
+    // 3D Tilt Logic for Modal
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!modalContainerRef.current) return;
         // If touch was detected recently, ignore mouse move to prevent conflict
@@ -237,14 +228,45 @@ export default function PortfolioContent() {
             duration: 0.5,
             ease: "power2.out",
             transformPerspective: 1000,
-            transformOrigin: "center",
-            force3D: true
+            transformOrigin: "center"
         });
 
         if (lightRef.current) {
             const rect = modalContainerRef.current.getBoundingClientRect();
             const localX = e.clientX - rect.left;
             const localY = e.clientY - rect.top;
+            lightRef.current.style.background = `radial-gradient(circle 400px at ${localX}px ${localY}px, rgba(255,255,255,0.4), transparent 100%)`;
+        }
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        isTouchRef.current = true;
+        const touch = e.touches[0];
+        touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!modalContainerRef.current) return;
+        const touch = e.touches[0];
+        // Increased sensitivity for mobile feel
+        const deltaX = ((touch.clientX - touchStartPos.current.x) / window.innerWidth) * 3; // Boosted sensitivity
+        const deltaY = ((touch.clientY - touchStartPos.current.y) / window.innerHeight) * 3;
+
+        gsap.to(modalContainerRef.current, {
+            rotationY: deltaX * 8,
+            rotationX: -deltaY * 8,
+            scale: 1, // No scaling on mobile
+            duration: 0.1,
+            ease: "power1.out",
+            transformPerspective: 1000,
+            transformOrigin: "center",
+            overwrite: "auto"
+        });
+
+        if (lightRef.current) {
+            const rect = modalContainerRef.current.getBoundingClientRect();
+            const localX = touch.clientX - rect.left;
+            const localY = touch.clientY - rect.top;
             lightRef.current.style.background = `radial-gradient(circle 400px at ${localX}px ${localY}px, rgba(255,255,255,0.4), transparent 100%)`;
         }
     };
@@ -258,99 +280,45 @@ export default function PortfolioContent() {
         setTimeout(() => { isTouchRef.current = false; }, 500);
     };
 
-    // Fix for Android touch rotation: Use native listeners to allow e.preventDefault()
-    useEffect(() => {
-        const overlay = modalOverlayRef.current;
-        if (!overlay || !selectedImage) return;
-
-        const handleStart = (e: TouchEvent) => {
-            isTouchRef.current = true;
-            const touch = e.touches[0];
-            touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-        };
-
-        const handleMove = (e: TouchEvent) => {
-            if (!modalContainerRef.current) return;
-            // Crucial for Android: prevent scroll to keep touch events alive
-            if (e.cancelable) e.preventDefault();
-
-            const touch = e.touches[0];
-            const deltaX = ((touch.clientX - touchStartPos.current.x) / window.innerWidth) * 3;
-            const deltaY = ((touch.clientY - touchStartPos.current.y) / window.innerHeight) * 3;
-
-            gsap.to(modalContainerRef.current, {
-                rotationY: deltaX * 18,
-                rotationX: -deltaY * 18,
-                scale: 1, // No scaling on mobile
-                duration: 0.1,
-                ease: "power1.out",
-                transformPerspective: 1000,
-                transformOrigin: "center",
-                overwrite: "auto",
-                force3D: true
-            });
-
-            if (lightRef.current) {
-                const rect = modalContainerRef.current.getBoundingClientRect();
-                const localX = touch.clientX - rect.left;
-                const localY = touch.clientY - rect.top;
-                lightRef.current.style.background = `radial-gradient(circle 400px at ${localX}px ${localY}px, rgba(255,255,255,0.4), transparent 100%)`;
-            }
-        };
-
-        const handleEnd = () => {
-            handleMouseLeave();
-        };
-
-        overlay.addEventListener('touchstart', handleStart, { passive: true });
-        overlay.addEventListener('touchmove', handleMove, { passive: false });
-        overlay.addEventListener('touchend', handleEnd, { passive: true });
-
-        return () => {
-            overlay.removeEventListener('touchstart', handleStart);
-            overlay.removeEventListener('touchmove', handleMove);
-            overlay.removeEventListener('touchend', handleEnd);
-        };
-    }, [selectedImage]);
-
     if (!isVisible) return null;
 
     return (
         <div ref={containerRef} className="portfolio-content-wrapper w-full bg-black text-white selection:bg-blue-500/30" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
             {/* 1 & 2. FIXED TOP SECTION (Header + Tabs) */}
             <div
-                className="fixed top-0 left-0 w-full z-50 pointer-events-none"
+                className="fixed top-0 left-0 w-full z-50 pointer-events-none transition-transform duration-300 ease-out"
                 style={{ transform: `translateY(-${scrollProgress * 0.8}vh)`, pointerEvents: 'none' }}
             >
                 <header
                     ref={headerRef}
-                    className="w-full relative flex items-center justify-center pointer-events-none"
+                    className="w-full relative flex items-center justify-center transition-all duration-300 ease-out pointer-events-none"
                     style={{
                         height: `${(windowWidth < 768 ? 18 : 30) - (scrollProgress * (windowWidth < 768 ? 3 : 15))}vh`,
                         pointerEvents: 'none'
                     }}
                 >
                     <div
-                        className="w-full h-[50vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                        className="w-full h-[50vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none [&_canvas]:!pointer-events-none"
+                        style={{ pointerEvents: 'none' }}
                     >
-                        {/* Blurred Circle Background - Position from commit 67ea5ea */}
+                        {/* Blurred Circle Background */}
                         <div
                             ref={blurCircleRef}
-                            className="absolute pointer-events-none rounded-full"
+                            className="absolute pointer-events-none"
                             style={{
-                                top: `${53 - (scrollProgress * 1.5)}%`,
+                                top: '53%',
                                 left: '50%',
                                 width: windowWidth < 768 ? '45vh' : '55vh',
                                 height: windowWidth < 768 ? '45vh' : '55vh',
                                 background: 'transparent',
                                 backdropFilter: 'blur(40px)',
                                 WebkitBackdropFilter: 'blur(40px)',
+                                // The mask DEFINES the shape and feathered edges
                                 maskImage: 'radial-gradient(circle, black 0%, transparent 65%)',
                                 WebkitMaskImage: 'radial-gradient(circle, black 0%, transparent 65%)',
                                 zIndex: 0
                             }}
                         />
-
                         <Suspense fallback={null}>
                             <Canvas
                                 className="!pointer-events-none"
@@ -364,7 +332,6 @@ export default function PortfolioContent() {
                                 }}
                             >
                                 <AdaptiveDpr pixelated />
-                                <AdaptiveEvents />
 
                                 <ambientLight intensity={0.2} color="#001144" />
                                 <pointLight position={[10, 15, 10]} intensity={200} color="#0066ff" />
@@ -374,7 +341,6 @@ export default function PortfolioContent() {
                                 <MiniModel scrollRef={scrollRef} isMobile={windowWidth < 768} />
 
                                 <EffectComposer>
-                                    <BakeShadows />
                                     <Bloom
                                         luminanceThreshold={0.2}
                                         mipmapBlur
@@ -386,35 +352,6 @@ export default function PortfolioContent() {
                                 <Preload all />
                             </Canvas>
                         </Suspense>
-
-                        <div
-                            className="absolute pointer-events-auto cursor-pointer rounded-full"
-                            style={{
-                                top: `${53 - (scrollProgress * 1.5)}%`,
-                                left: '50%',
-                                width: windowWidth < 768 ? '20vh' : '25vh',
-                                height: windowWidth < 768 ? '20vh' : '25vh',
-                                transform: 'translate(-50%, -50%)',
-                                zIndex: 10
-                            }}
-                            onClick={() => {
-                                if (isManualScrolling.current) return;
-                                isManualScrolling.current = true;
-
-                                // Reset states immediately for UI feedback
-                                setIsScrolled(false);
-                                setScrollProgress(0);
-                                scrollRef.current = 0;
-
-                                // Force scroll to absolute top of document
-                                (document.documentElement || document.body).scrollTo({ top: 0, behavior: 'smooth' });
-
-                                // Unlock after a safe margin
-                                setTimeout(() => {
-                                    isManualScrolling.current = false;
-                                }, 800);
-                            }}
-                        />
                     </div>
                 </header>
 
@@ -422,19 +359,16 @@ export default function PortfolioContent() {
 
             <nav
                 ref={tabsRef}
-                className="fixed left-0 w-full z-[60] flex justify-center items-center pointer-events-none transition-[transform,top] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] will-change-[transform,top]"
+                className="fixed left-0 w-full z-[60] flex justify-center items-center pointer-events-none"
                 style={{
-                    // Use fixed positions for top to avoid "middle" states during snap
-                    top: isScrolled
-                        ? 'calc(15vh + 1.5rem)'
-                        : `calc(${(windowWidth < 768 ? 18 : 30)}vh + 1.5rem)`,
-                    transform: isScrolled
-                        ? `translateY(${(windowWidth < 768 ? 64 : 78)}vh)`
-                        : 'translateY(0)'
+                    // Match original position: header height + 1.5rem padding, adjusted by scrollProgress
+                    top: `calc(${(windowWidth < 768 ? 18 : 30)}vh + 1.5rem - ${(scrollProgress * (windowWidth < 768 ? 4 : 15.8))}vh)`,
+                    // Move to bottom: on mobile we stop a bit higher (e.g. 82vh total instead of 90vh) to avoid browser bars
+                    transform: `translateY(${scrollProgress * (windowWidth < 768 ? 64 : 78)}vh)`
                 }}
             >
                 <div
-                    className={`flex items-center transition-[background-color,padding,gap,border-color,shadow] duration-500 ease-in-out pointer-events-auto rounded-full ${isScrolled
+                    className={`flex items-center transition-all duration-500 ease-in-out pointer-events-auto rounded-full ${isScrolled
                         ? 'bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.9)] gap-6 md:gap-10 px-4 py-2'
                         : 'bg-transparent border-transparent shadow-none gap-8 md:gap-14 px-6 py-3'
                         }`}
@@ -442,9 +376,7 @@ export default function PortfolioContent() {
                     {categories.map((cat) => (
                         <p
                             key={cat}
-                            onClick={() => {
-                                setActiveTab(cat);
-                            }}
+                            onClick={() => setActiveTab(cat)}
                             className={`cursor-pointer whitespace-nowrap text-[9px] md:text-xs font-black tracking-[0.2em] transition-all duration-300 ${activeTab === cat
                                 ? 'text-white opacity-100 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]'
                                 : 'text-white/40 hover:text-white/70'
@@ -475,24 +407,11 @@ export default function PortfolioContent() {
                                         className="grid-item relative group overflow-hidden rounded-2xl bg-zinc-900"
                                     >
                                         <img
-                                            src={`${img.src.split('?')[0]}?auto=format&fit=crop&q=70&w=${windowWidth < 768 ? 400 : 700}`}
+                                            src={img.src}
                                             alt="Portfolio Work"
                                             className="w-full h-auto object-cover cursor-pointer"
                                             onClick={() => setSelectedImage(img)}
-                                            onMouseEnter={() => {
-                                                // Prefetch high-res version on hover
-                                                const link = document.createElement('link');
-                                                link.rel = 'prefetch';
-                                                link.href = `${img.src.split('?')[0]}?auto=format&fit=contain&q=90&w=1600`;
-                                                document.head.appendChild(link);
-                                            }}
-                                            onTouchStart={() => {
-                                                // Prefetch for mobile
-                                                const imgPreload = new Image();
-                                                imgPreload.src = `${img.src.split('?')[0]}?auto=format&fit=contain&q=90&w=1600`;
-                                            }}
                                             loading="lazy"
-                                            decoding="async"
                                         />
                                     </div>
                                 ))}
@@ -504,14 +423,16 @@ export default function PortfolioContent() {
             {/* MODAL OVERLAY */}
             {selectedImage && (
                 <div
-                    ref={modalOverlayRef}
                     className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10 animate-fade-in touch-none"
                     onClick={() => setSelectedImage(null)}
                     onMouseMove={handleMouseMove}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={() => handleMouseLeave()}
                 >
                     <div
                         ref={modalContainerRef}
-                        className="relative rounded-lg overflow-hidden shadow-2xl inline-block touch-none will-change-transform"
+                        className="relative rounded-lg overflow-hidden shadow-2xl inline-block touch-none"
                         style={{ transformStyle: 'preserve-3d' }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -520,11 +441,9 @@ export default function PortfolioContent() {
                             className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay transition-opacity duration-200"
                         />
                         <img
-                            src={`${selectedImage.src.split('?')[0]}?auto=format&fit=contain&q=90&w=1600`}
+                            src={selectedImage.src}
                             alt="Selected Work"
                             className="max-w-[90vw] max-h-[85vh] w-auto h-auto object-contain block pointer-events-none relative z-10"
-                            decoding="async"
-                            {...({ fetchpriority: "high" } as any)}
                         />
                     </div>
 
