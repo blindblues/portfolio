@@ -147,9 +147,12 @@ export default function PortfolioContent() {
     const [isVisible, setIsVisible] = useState(true);
     const [selectedImage, setSelectedImage] = useState<typeof graphicDesignImages[0] | null>(null);
 
-    // Reset scroll to top when category changes - enhanced for mobile Chrome
+    // Reset scroll to top when category changes - enhanced for iOS/iPhone and mobile Chrome
     useEffect(() => {
-        // Robust scroll reset
+        // Force immediate UI reset
+        setScrollProgress(0);
+        scrollRef.current = 0;
+
         const resetScroll = () => {
             const html = document.documentElement;
             const body = document.body;
@@ -170,15 +173,16 @@ export default function PortfolioContent() {
             });
         };
 
+        // Initial reset
         resetScroll();
 
-        // Small delay to ensure layout has updated
+        // Sequence of resets to combat iOS scroll inertia (rubber-banding)
+        const timeouts = [10, 50, 100, 200].map(ms => setTimeout(resetScroll, ms));
         const rafId = requestAnimationFrame(resetScroll);
-        const timeoutId = setTimeout(resetScroll, 50);
 
         return () => {
             cancelAnimationFrame(rafId);
-            clearTimeout(timeoutId);
+            timeouts.forEach(clearTimeout);
         };
     }, [activeTab]);
 
