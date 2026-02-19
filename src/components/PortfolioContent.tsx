@@ -210,6 +210,7 @@ export default function PortfolioContent() {
 
         if (selectedImage) {
             const scrollY = window.scrollY;
+            isModalOpenRef.current = true; // Pin the scroll UI state
             body.style.position = 'fixed';
             body.style.top = `-${scrollY}px`;
             body.style.width = '100%';
@@ -233,6 +234,7 @@ export default function PortfolioContent() {
             // Restore smooth scroll after a frame
             requestAnimationFrame(() => {
                 html.style.scrollBehavior = originalScrollBehavior;
+                isModalOpenRef.current = false; // Unpin UI state after restoration
             });
 
             wasModalOpen.current = false;
@@ -290,9 +292,11 @@ export default function PortfolioContent() {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    const isModalOpenRef = useRef(false);
+
     useEffect(() => {
         const handleScroll = () => {
-            if (isResettingRef.current) return; // Ignore events during reset
+            if (isResettingRef.current || isModalOpenRef.current) return; // Ignore events during reset or while modal is open
 
             const scrollY = window.scrollY;
             setIsScrolled(scrollY > 50);
