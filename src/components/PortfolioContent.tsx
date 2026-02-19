@@ -201,30 +201,50 @@ export default function PortfolioContent() {
         };
     }, [activeTab]);
 
-    // Lock body scroll when modal is open
+    const wasModalOpen = useRef(false);
+
+    // Lock body scroll when modal is open and restore correctly
     useEffect(() => {
+        const html = document.documentElement;
+        const body = document.body;
+
         if (selectedImage) {
             const scrollY = window.scrollY;
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollY}px`;
-            document.body.style.width = '100%';
-            document.body.style.overflow = 'hidden';
-        } else {
-            const scrollY = document.body.style.top;
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            document.body.style.overflow = '';
+            body.style.position = 'fixed';
+            body.style.top = `-${scrollY}px`;
+            body.style.width = '100%';
+            body.style.overflow = 'hidden';
+            wasModalOpen.current = true;
+        } else if (wasModalOpen.current) {
+            const scrollPosition = parseInt(body.style.top || '0') * -1;
 
-            if (scrollY) {
-                window.scrollTo(0, parseInt(scrollY || '0') * -1);
-            }
+            // Restore styles
+            body.style.position = '';
+            body.style.top = '';
+            body.style.width = '';
+            body.style.overflow = '';
+
+            // Temporary disable smooth scroll for instant restoration
+            const originalScrollBehavior = html.style.scrollBehavior;
+            html.style.scrollBehavior = 'auto';
+
+            window.scrollTo(0, scrollPosition);
+
+            // Restore smooth scroll after a frame
+            requestAnimationFrame(() => {
+                html.style.scrollBehavior = originalScrollBehavior;
+            });
+
+            wasModalOpen.current = false;
         }
+
         return () => {
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            document.body.style.overflow = '';
+            if (selectedImage) {
+                body.style.position = '';
+                body.style.top = '';
+                body.style.width = '';
+                body.style.overflow = '';
+            }
         };
     }, [selectedImage]);
     const containerRef = useRef<HTMLDivElement>(null);
