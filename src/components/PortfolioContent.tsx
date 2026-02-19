@@ -147,10 +147,67 @@ export default function PortfolioContent() {
     const [isVisible, setIsVisible] = useState(true);
     const [selectedImage, setSelectedImage] = useState<typeof graphicDesignImages[0] | null>(null);
 
-    // Reset scroll to top when category changes
+    // Reset scroll to top when category changes - enhanced for mobile Chrome
     useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'instant' });
+        // Robust scroll reset
+        const resetScroll = () => {
+            const html = document.documentElement;
+            const body = document.body;
+
+            // Temporary disable smooth scroll
+            const originalScrollBehavior = html.style.scrollBehavior;
+            html.style.scrollBehavior = 'auto';
+            body.style.scrollBehavior = 'auto';
+
+            window.scrollTo(0, 0);
+            html.scrollTop = 0;
+            body.scrollTop = 0;
+
+            // Restore after a frame
+            requestAnimationFrame(() => {
+                html.style.scrollBehavior = originalScrollBehavior;
+                body.style.scrollBehavior = originalScrollBehavior;
+            });
+        };
+
+        resetScroll();
+
+        // Small delay to ensure layout has updated
+        const rafId = requestAnimationFrame(resetScroll);
+        const timeoutId = setTimeout(resetScroll, 50);
+
+        return () => {
+            cancelAnimationFrame(rafId);
+            clearTimeout(timeoutId);
+        };
     }, [activeTab]);
+
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (selectedImage) {
+            const scrollY = window.scrollY;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        } else {
+            const scrollY = document.body.style.top;
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+
+            if (scrollY) {
+                window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
+        }
+        return () => {
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+        };
+    }, [selectedImage]);
     const containerRef = useRef<HTMLDivElement>(null);
     const modalOverlayRef = useRef<HTMLDivElement>(null);
     const modalContainerRef = useRef<HTMLDivElement>(null);
@@ -318,7 +375,11 @@ export default function PortfolioContent() {
             {/* 1 & 2. FIXED TOP SECTION (Header + Tabs) */}
             <div
                 className="fixed top-0 left-0 w-full z-50 pointer-events-none transition-transform duration-300 ease-out"
-                style={{ transform: `translateY(-${scrollProgress * 0.8}vh)`, pointerEvents: 'none' }}
+                style={{
+                    transform: `translateY(-${scrollProgress * 0.8}vh)`,
+                    pointerEvents: 'none',
+                    willChange: 'transform'
+                }}
             >
                 <header
                     ref={headerRef}
@@ -471,7 +532,8 @@ export default function PortfolioContent() {
             {selectedImage && (
                 <div
                     ref={modalOverlayRef}
-                    className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10 animate-fade-in touch-none"
+                    className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-4 md:p-10 animate-fade-in touch-none"
+                    style={{ height: '100dvh' }}
                     onClick={() => setSelectedImage(null)}
                     onMouseMove={handleMouseMove}
                 >
