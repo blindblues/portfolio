@@ -356,7 +356,7 @@ export default function PortfolioContent() {
                                 className="!pointer-events-none"
                                 flat
                                 dpr={[1, 1.5]}
-                                camera={{ position: [0, 0, 60], fov: 45 }}
+                                camera={{ position: [0, 0, 60], fov: windowWidth < 768 ? 60 : 45 }}
                                 gl={{
                                     antialias: false,
                                     powerPreference: "high-performance",
