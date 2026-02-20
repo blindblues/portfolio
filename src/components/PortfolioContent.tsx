@@ -8,7 +8,7 @@ import gsap from 'gsap';
 const BASE_PATH = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const MiniModel = React.memo(function MiniModel({ scrollRef, isMobile }: { scrollRef: React.MutableRefObject<number>, isMobile: boolean }) {
-    const { scene, animations } = useGLTF(`${BASE_PATH}/3d/Blowed2.glb`);
+    const { scene, animations } = useGLTF(`${BASE_PATH}/3d/Blowed2.glb`, 'https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
     const clonedScene = React.useMemo(() => scene.clone(), [scene]);
     const { actions } = useAnimations(animations, clonedScene);
     const { scene: canvasScene } = useThree();
@@ -366,15 +366,13 @@ export default function PortfolioContent() {
                                 <AdaptiveDpr pixelated />
                                 <AdaptiveEvents />
 
-                                <ambientLight intensity={0.2} color="#001144" />
-                                <pointLight position={[10, 15, 10]} intensity={200} color="#0066ff" />
-                                <pointLight position={[-10, -15, -10]} intensity={100} color="#0033ff" />
-                                <spotLight position={[0, 40, 0]} intensity={500} color="#0099ff" distance={100} angle={0.5} />
+                                <ambientLight intensity={0.4} color="#001144" />
+                                <pointLight position={[10, 15, 10]} intensity={300} color="#0066ff" />
+                                <pointLight position={[-10, -15, -10]} intensity={200} color="#0033ff" />
 
                                 <MiniModel scrollRef={scrollRef} isMobile={windowWidth < 768} />
 
                                 <EffectComposer>
-                                    <BakeShadows />
                                     <Bloom
                                         luminanceThreshold={0.2}
                                         mipmapBlur
@@ -472,28 +470,10 @@ export default function PortfolioContent() {
                                 .map((img, i) => (
                                     <div
                                         key={`${activeTab}-${colIndex}-${i}`}
-                                        className="grid-item relative group overflow-hidden rounded-2xl bg-zinc-900"
+                                        className={`grid-item relative group overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center cursor-pointer hover:border-white/20 transition-colors ${img.h}`}
+                                        onClick={() => setSelectedImage(img)}
                                     >
-                                        <img
-                                            src={`${img.src.split('?')[0]}?auto=format&fit=crop&q=70&w=${windowWidth < 768 ? 400 : 700}`}
-                                            alt="Portfolio Work"
-                                            className="w-full h-auto object-cover cursor-pointer"
-                                            onClick={() => setSelectedImage(img)}
-                                            onMouseEnter={() => {
-                                                // Prefetch high-res version on hover
-                                                const link = document.createElement('link');
-                                                link.rel = 'prefetch';
-                                                link.href = `${img.src.split('?')[0]}?auto=format&fit=contain&q=90&w=1600`;
-                                                document.head.appendChild(link);
-                                            }}
-                                            onTouchStart={() => {
-                                                // Prefetch for mobile
-                                                const imgPreload = new Image();
-                                                imgPreload.src = `${img.src.split('?')[0]}?auto=format&fit=contain&q=90&w=1600`;
-                                            }}
-                                            loading="lazy"
-                                            decoding="async"
-                                        />
+                                        <span className="text-zinc-500 font-medium tracking-widest text-[10px] uppercase">Coming soon</span>
                                     </div>
                                 ))}
                         </div>
@@ -511,7 +491,7 @@ export default function PortfolioContent() {
                 >
                     <div
                         ref={modalContainerRef}
-                        className="relative rounded-lg overflow-hidden shadow-2xl inline-block touch-none will-change-transform"
+                        className="relative rounded-lg overflow-hidden shadow-2xl inline-block touch-none will-change-transform bg-zinc-900 border border-white/10"
                         style={{ transformStyle: 'preserve-3d' }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -519,13 +499,9 @@ export default function PortfolioContent() {
                             ref={lightRef}
                             className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay transition-opacity duration-200"
                         />
-                        <img
-                            src={`${selectedImage.src.split('?')[0]}?auto=format&fit=contain&q=90&w=1600`}
-                            alt="Selected Work"
-                            className="max-w-[90vw] max-h-[85vh] w-auto h-auto object-contain block pointer-events-none relative z-10"
-                            decoding="async"
-                            {...({ fetchpriority: "high" } as any)}
-                        />
+                        <div className="w-[80vw] md:w-[60vw] aspect-video flex items-center justify-center relative z-10">
+                            <span className="text-zinc-400 font-bold tracking-[0.2em] text-sm md:text-xl uppercase">Coming soon</span>
+                        </div>
                     </div>
 
                 </div>

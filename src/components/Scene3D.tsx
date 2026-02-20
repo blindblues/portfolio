@@ -45,7 +45,7 @@ function SceneSetup() {
 }
 
 function Model({ url, isLoaded }: { url: string, isLoaded: boolean }) {
-    const { scene, animations } = useGLTF(`${BASE_PATH}${url}`);
+    const { scene, animations } = useGLTF(`${BASE_PATH}${url}`, 'https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
     const { actions } = useAnimations(animations, scene);
     const modelRef = useRef<THREE.Group>(null!);
 
@@ -141,10 +141,9 @@ export default function Scene3D() {
                     <BakeShadows />
                     <SceneSetup />
 
-                    <ambientLight intensity={0.2} color="#001144" />
-                    <pointLight position={[10, 15, 10]} intensity={200} color="#0066ff" />
-                    <pointLight position={[-10, -15, -10]} intensity={100} color="#0033ff" />
-                    <spotLight position={[0, 40, 0]} intensity={500} color="#0099ff" distance={100} angle={0.5} />
+                    <ambientLight intensity={0.4} color="#001144" />
+                    <pointLight position={[10, 15, 10]} intensity={300} color="#0066ff" />
+                    <pointLight position={[-10, -15, -10]} intensity={200} color="#0033ff" />
 
                     <Float speed={2} rotationIntensity={0} floatIntensity={0.5} rotation={[0, 0, 0]}>
                         <Center>
